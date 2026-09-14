@@ -68,6 +68,12 @@ export function TopicDetail({
   const shared = notes.find((n) => n.visibility === 'SHARED' && n.topicId === topic.topicId);
   const internal = notes.find((n) => n.visibility === 'INTERNAL' && n.topicId === topic.topicId);
 
+  // Eine Ablehnung ohne Begruendung belegt nur, DASS abgelehnt wurde, nicht
+  // WORUEBER aufgeklaert wurde - und genau darauf kommt es im Streitfall an
+  // (docs/08-textbausteine.md). Deshalb ist die Protokollnotiz hier Pflicht.
+  const declineNeedsReason =
+    topic.outcome === 'CLIENT_DECLINED' && (shared?.body ?? '').trim().length === 0;
+
   function saveNote(existing: NoteState | undefined, visibility: 'SHARED' | 'INTERNAL', body: string) {
     onCommand({
       type: 'NOTE_UPSERT',
@@ -125,10 +131,22 @@ export function TopicDetail({
           ))}
         </div>
         {topic.outcome === 'CLIENT_DECLINED' ? (
-          <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
-            Die Ablehnung wird im Protokoll festgehalten — inklusive des Hinweises, den Sie
-            gegeben haben. Genau das zählt im Streitfall.
-          </p>
+          declineNeedsReason ? (
+            <div role="alert"
+                 className="rounded-md border border-warning/25 bg-warning-soft px-3.5 py-3 text-[0.8125rem] leading-relaxed text-warning">
+              <p className="font-medium">Worauf haben Sie hingewiesen?</p>
+              <p className="mt-0.5">
+                Halten Sie unten im Protokollfeld fest, worüber Sie aufgeklärt haben. Eine
+                Ablehnung ohne diesen Satz belegt nur, <em>dass</em> abgelehnt wurde — nicht
+                worüber gesprochen wurde. Genau darauf kommt es im Streitfall an.
+              </p>
+            </div>
+          ) : (
+            <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
+              Die Ablehnung erscheint im Protokoll mit Ihrem Hinweis, dem Datum und dem Zusatz,
+              dass die Entscheidung aus eigenem Antrieb erfolgte und jederzeit revidierbar ist.
+            </p>
+          )
         ) : null}
       </fieldset>
 
@@ -137,17 +155,28 @@ export function TopicDetail({
           <label htmlFor={`${noteId}-shared`}
                  className="flex items-center gap-1.5 text-[0.8125rem] font-medium">
             <Users aria-hidden className="size-3.5 text-ink-subtle" />
-            Notiz fürs Protokoll
+            {topic.outcome === 'CLIENT_DECLINED' ? 'Worauf Sie hingewiesen haben' : 'Notiz fürs Protokoll'}
+            {topic.outcome === 'CLIENT_DECLINED' ? (
+              <span className="text-danger" aria-hidden>*</span>
+            ) : null}
           </label>
           <textarea
             id={`${noteId}-shared`}
             defaultValue={shared?.body ?? ''}
             onBlur={(e) => saveNote(shared, 'SHARED', e.target.value)}
             rows={3}
-            placeholder="Kunde möchte höhere Deckung für Fahrräder und elektronische Geräte."
-            className="w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[0.9375rem] leading-relaxed focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]/25"
+            aria-invalid={declineNeedsReason}
+            placeholder={topic.outcome === 'CLIENT_DECLINED'
+              ? 'im Todesfall keine private Absicherung besteht'
+              : 'Kunde möchte höhere Deckung für Fahrräder und elektronische Geräte.'}
+            className={`w-full rounded-lg border bg-surface px-3.5 py-2.5 text-[0.9375rem] leading-relaxed focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]/25 ${
+              declineNeedsReason ? 'border-warning' : 'border-line-strong'}`}
           />
-          <p className="text-[0.8125rem] text-ink-subtle">Erscheint im Protokoll für den Kunden.</p>
+          <p className="text-[0.8125rem] text-ink-subtle">
+            {topic.outcome === 'CLIENT_DECLINED'
+              ? 'Wird zum Satz: „… wurde darauf hingewiesen, dass …"'
+              : 'Erscheint im Protokoll für den Kunden.'}
+          </p>
         </div>
 
         <div className="grid gap-1.5">

@@ -13,6 +13,8 @@ import { listTopicOptions } from '@/features/policies/topic-options';
 import { PolicySection } from '@/features/policies/policy-section';
 import { CustomerSettingsForm } from '@/features/customers/customer-settings-form';
 import { PersonCard } from '@/features/customers/person-card';
+import { listCustomerTasks } from '@/features/tasks/queries';
+import { TaskPanel } from '@/features/tasks/components/task-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,9 +37,11 @@ export default async function CustomerPage({
   const customer = await getCustomer(customerId);
   if (!customer) notFound();
 
-  const [policies, insurers, topics] = await Promise.all([
+  const [policies, insurers, topics, tasks] = await Promise.all([
     listPolicies(customerId), listInsurers(), listTopicOptions(),
+    listCustomerTasks(customerId),
   ]);
+  const today = new Date().toISOString().slice(0, 10);
 
   const hasPrimary = customer.persons.some((p) => p.personRole === 'PRIMARY');
 
@@ -96,6 +100,22 @@ export default async function CustomerPage({
           persons={customer.persons.map((p) => ({
             id: p.id, name: `${p.firstName} ${p.lastName}`,
           }))}
+        />
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Aufgaben</CardTitle>
+          <CardDescription>
+            Was aus den Gesprächen offen ist — auf beiden Seiten. Beim Abschluss einer
+            Beratung entstehen diese Aufgaben aus den Ergebnissen.
+          </CardDescription>
+        </CardHeader>
+        <TaskPanel
+          tasks={tasks}
+          today={today}
+          customerId={customer.id}
+          emptyText="Keine offenen Aufgaben zu diesem Kunden."
         />
       </Card>
 

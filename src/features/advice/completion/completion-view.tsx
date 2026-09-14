@@ -1,0 +1,203 @@
+'use client';
+
+import { useActionState, useState } from 'react';
+import Link from 'next/link';
+import { AlertTriangle, ArrowLeft, Check, User, UserRound } from 'lucide-react';
+import { Alert, Badge, Button, Card, CardHeader, CardTitle, TopicIcon } from '@/components/ui';
+import { formatCHF, rappen } from '@/domain/shared/money';
+import { TASK_OWNER_LABEL } from '@/domain/task/types';
+import type { SuggestedTask } from '@/domain/task/suggestions';
+import type { SummaryDocument } from '@/domain/advice/summary';
+import { completeSession, type CompleteState } from './actions';
+
+const INITIAL: CompleteState = { status: 'idle' };
+
+function dueLabel(days: number | null): string {
+  if (days === null) return 'ohne Frist';
+  if (days === 1) return 'in 1 Tag';
+  return `in ${days} Tagen`;
+}
+
+/**
+ * Der Abschluss (Konzeptpunkt 29).
+ *
+ * Drei Dinge, in dieser Reihenfolge: was noch fehlt, was das Protokoll
+ * sagen wird, und welche Folgeaufgaben entstehen. Die Aufgaben sind
+ * vorausgewaehlt - der Berater bestaetigt, statt zu erfassen. Das ist der
+ * Unterschied zwischen einem Werkzeug und einem weiteren Formular.
+ */
+export function CompletionView({
+  sessionId, document, suggestions, blockers,
+}: {
+  sessionId: string;
+  document: SummaryDocument;
+  suggestions: readonly SuggestedTask[];
+  blockers: readonly string[];
+}) {
+  const [accepted, setAccepted] = useState<ReadonlySet<string>>(
+    () => new Set(suggestions.map((s) => s.key)),
+  );
+  const [state, action, pending] = useActionState(completeSession, INITIAL);
+
+  function toggle(key: string): void {
+    setAccepted((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  }
+
+  const blocked = blockers.length > 0;
+
+  return (
+    <div className="mx-auto grid w-full max-w-3xl gap-6 px-5 py-6">
+      <div className="grid gap-2">
+        <Link href={`/beratung/${sessionId}`}
+              className="flex w-fit items-center gap-1.5 rounded-sm text-[0.8125rem] text-ink-muted hover:text-ink">
+          <ArrowLeft aria-hidden className="size-3.5" />Zurück ins Gespräch
+        </Link>
+        <h1 className="text-2xl">Beratung abschliessen</h1>
+        <p className="text-sm text-ink-muted">
+          {document.customerName}
+          {document.participants.length > 0 ? ` · ${document.participants.join(', ')}` : ''}
+        </p>
+      </div>
+
+      {blocked ? (
+        <Alert tone="warning" title={
+          blockers.length === 1
+            ? 'Eine Pflichtsparte hat noch kein Ergebnis'
+            : `${blockers.length} Pflichtsparten haben noch kein Ergebnis`
+        }>
+          <p className="mb-2">
+            Jede Sparte braucht ein Ergebnis — auch „Kunde möchte keine Beratung“. Genau
+            das macht später nachvollziehbar, dass nichts vergessen wurde.
+          </p>
+          <ul className="grid gap-1">
+            {blockers.map((name) => (
+              <li key={name} className="flex items-center gap-1.5">
+                <AlertTriangle aria-hidden className="size-3.5 shrink-0" />{name}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-4">
+        {[
+          ['Besprochen', `${document.counts.discussed}/${document.counts.total}`],
+          ['Handlungsbedarf', String(document.counts.actionNeeded)],
+          ['Kein Bedarf', String(document.counts.noAction)],
+          ['Abgelehnt', String(document.counts.declined)],
+        ].map(([label, value]) => (
+          <Card key={label}>
+            <div className="grid gap-1 p-4">
+              <p className="text-[0.8125rem] text-ink-muted">{label}</p>
+              <p className="tabular text-xl font-semibold">{value}</p>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>Das kommt ins Protokoll</CardTitle></CardHeader>
+        <ul className="divide-y divide-line">
+          {document.topics.map((topic) => (
+            <li key={topic.slug} className="grid gap-1 px-5 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-2 font-medium">
+                  <TopicIcon name={topic.icon} className="size-4 text-ink-muted" />
+                  {topic.name}
+                </span>
+                <Badge tone={
+                  topic.outcome === 'NO_ACTION_NEEDED' ? 'success'
+                    : topic.wasSkipped || topic.outcome === null ? 'neutral'
+                      : topic.outcome === 'CLIENT_DECLINED' ? 'warning' : 'accent'
+                }>
+                  {topic.outcomeLabel}
+                </Badge>
+              </div>
+              {topic.note ? (
+                <p className="text-[0.8125rem] leading-relaxed text-ink-muted">{topic.note}</p>
+              ) : null}
+              {topic.existingPolicies.length > 0 ? (
+                <p className="tabular text-[0.8125rem] text-ink-subtle">
+                  {topic.existingPolicies.map((p) => p.insurerName).join(', ')}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        {document.totalAnnualPremiumCents > 0 ? (
+          <p className="tabular border-t border-line px-5 py-3 text-[0.8125rem] text-ink-muted">
+            Erfasste Jahresprämien: <span className="font-medium text-ink">
+              {formatCHF(rappen(document.totalAnnualPremiumCents))}
+            </span>
+          </p>
+        ) : null}
+      </Card>
+
+      <form action={action} className="grid gap-6">
+        <input type="hidden" name="sessionId" value={sessionId} />
+        <input type="hidden" name="acceptedKeys" value={JSON.stringify([...accepted])} />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Folgeaufgaben</CardTitle>
+          </CardHeader>
+
+          {suggestions.length === 0 ? (
+            <p className="px-5 py-6 text-center text-[0.8125rem] text-ink-muted">
+              Aus diesem Gespräch ergeben sich keine Folgeaufgaben.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {suggestions.map((s) => {
+                const on = accepted.has(s.key);
+                const Owner = s.ownerType === 'CUSTOMER' ? UserRound : User;
+                return (
+                  <li key={s.key}>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={on}
+                      onClick={() => toggle(s.key)}
+                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-hover"
+                    >
+                      <span className={`flex size-5 shrink-0 items-center justify-center rounded-[0.25rem] border transition-colors ${
+                        on ? 'border-accent bg-accent text-ink-inverted' : 'border-line-strong'
+                      }`}>
+                        {on ? <Check aria-hidden className="size-3.5" strokeWidth={3} /> : null}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-[0.9375rem] ${on ? 'font-medium' : 'text-ink-muted'}`}>
+                          {s.title}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[0.8125rem] text-ink-subtle">
+                          <Owner aria-hidden className="size-3.5" />
+                          {TASK_OWNER_LABEL[s.ownerType]} · {dueLabel(s.dueInDays)}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+
+        {state.status === 'error' ? <Alert tone="danger">{state.message}</Alert> : null}
+
+        <div className="grid gap-2">
+          <Button type="submit" size="lg" loading={pending} disabled={blocked}>
+            Beratung abschliessen
+          </Button>
+          <p className="text-center text-[0.8125rem] leading-relaxed text-ink-subtle">
+            Der Abschluss friert das Protokoll ein. Danach sind keine Änderungen mehr
+            möglich — auch nicht durch die Administration.
+          </p>
+        </div>
+      </form>
+    </div>
+  );
+}

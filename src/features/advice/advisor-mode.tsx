@@ -28,7 +28,7 @@ export function AdvisorMode({
   initialState: SessionState;
   topicNames: Readonly<Record<string, string>>;
 }) {
-  const { topics, progress, sync, dispatch } = useAdviceSession(sessionId, initialState);
+  const { state, topics, progress, sync, dispatch } = useAdviceSession(sessionId, initialState);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overview, setOverview] = useState<'wheel' | 'list'>('wheel');
 
@@ -51,6 +51,8 @@ export function AdvisorMode({
     }),
     [ordered, topicNames],
   );
+
+  const notes = useMemo(() => Object.values(state.notes), [state.notes]);
 
   const activeIndex = ordered.findIndex((t) => t.topicId === activeId);
   const active = activeIndex >= 0 ? ordered[activeIndex] : null;
@@ -112,10 +114,14 @@ export function AdvisorMode({
         ) : null}
 
         {active ? (
+          // Der Schluessel erzwingt beim Spartenwechsel ein frisches
+          // Formular. Ohne ihn behielten die Notizfelder - sie arbeiten mit
+          // defaultValue - den Text der zuvor geoeffneten Sparte.
           <TopicDetail
+            key={active.topicId}
             topic={active}
             name={topicNames[active.topicId] ?? active.topicId}
-            notes={[]}
+            notes={notes}
             onCommand={dispatch}
           />
         ) : (
@@ -153,6 +159,17 @@ export function AdvisorMode({
                 )}
               </div>
             </div>
+
+            {progress.requiredOpen === 0 && progress.total > 0 ? (
+              // Erst wenn alles ein Ergebnis hat, wird der Abschluss zur
+              // Hauptsache. Vorher stuende hier eine Schaltflaeche, die nur
+              // zu einer Sperrmeldung fuehrt.
+              <Button asChild size="lg" className="w-full">
+                <Link href={`/beratung/${sessionId}/abschluss`}>
+                  Beratung abschliessen<ChevronRight aria-hidden />
+                </Link>
+              </Button>
+            ) : null}
 
             {overview === 'wheel' ? (
               // Das Rad fuellt die verbleibende Hoehe und sitzt mittig: es ist

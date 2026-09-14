@@ -13,6 +13,9 @@
  * den ersten Tippfehler im Parameternamen durchlaesst.
  */
 
+/** JSON, wie Postgres es annimmt - fuer jsonb-Parameter. */
+export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+
 type Row = Record<string, unknown>;
 
 type Table = {
@@ -50,6 +53,10 @@ export type Database = {
       };
       start_advice_session: {
         Args: { p_customer_id: string; p_title?: string | null };
+        Returns: string;
+      };
+      complete_advice_session: {
+        Args: { p_session_id: string; p_document: Json };
         Returns: string;
       };
     };
