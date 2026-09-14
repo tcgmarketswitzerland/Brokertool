@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Building2, ChevronRight, Layers, Palette, Users } from 'lucide-react';
+import { Building2, ChevronRight, Layers, Palette, ShieldCheck, Users } from 'lucide-react';
 import { Card } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Einstellungen' };
@@ -9,6 +9,8 @@ export const dynamic = 'force-dynamic';
 const SECTIONS = [
   { href: '/einstellungen/benutzer', title: 'Benutzer', Icon: Users, ready: true,
     description: 'Mitarbeitende einladen, Rollen vergeben, Zugänge deaktivieren.' },
+  { href: '/einstellungen/sicherheit', title: 'Sicherheit', Icon: ShieldCheck, ready: true,
+    description: 'Zwei-Faktor-Anmeldung für Ihr Konto einrichten.' },
   { href: '/einstellungen', title: 'Firma', Icon: Building2, ready: false,
     description: 'Name, Adresse und Zwei-Faktor-Pflicht. Phase 8.' },
   { href: '/einstellungen', title: 'Branding', Icon: Palette, ready: false,
