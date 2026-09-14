@@ -50,7 +50,8 @@ die fehlenden Supabase-Bestandteile.
 
 ```bash
 createdb brokertool_test
-export TEST_DATABASE_URL=postgres://postgres@localhost:5432/brokertool_test
+cp .env.test.example .env.test    # enthaelt TEST_DATABASE_URL
+set -a && . ./.env.test && set +a
 pnpm test:db
 ```
 

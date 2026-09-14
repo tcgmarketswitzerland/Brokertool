@@ -32,6 +32,12 @@ Ohne diese drei Punkte kann ich nicht weiterentwickeln. Aufwand insgesamt etwa *
 - [ ] Region ist bereits über `vercel.json` auf `fra1` festgelegt — nichts einzustellen
 - [ ] Environment Variables setzen (Production **und** Preview):
       `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- [ ] Beim `SUPABASE_SERVICE_ROLE_KEY` das Schloss-Symbol aktivieren (Sensitive)
+- [ ] **Nicht** die Supabase-Integration unter *Optional Integrations* verwenden — sie legt ein
+      neues Supabase-Projekt an, bei dem die Region nicht sicher auf Zürich gesetzt werden kann
+- [ ] Tarif beachten: Der Hobby-Tarif ist nach Vercels Nutzungsbedingungen nicht für kommerzielle
+      Nutzung zugelassen. Zum Entwickeln genügt er; vor dem ersten zahlenden Kunden auf Pro
+      wechseln (Kostenpunkt prüfen auf vercel.com/pricing)
 - [ ] Prüfen, dass der erste Build durchläuft
 
 ### A3 · Lokale Entwicklungsumgebung
