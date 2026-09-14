@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { ChevronRight, Plus, Users } from 'lucide-react';
+import { ChevronRight, Plus, Upload, Users } from 'lucide-react';
 import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { CUSTOMER_TYPE_LABEL } from '@/domain/customer/types';
 import { CustomerSearch } from '@/features/customers/customer-search';
@@ -29,9 +29,14 @@ export default async function CustomersPage({
               : `${customers.length} ${customers.length === 1 ? 'Kunde' : 'Kunden'}${q ? ' gefunden' : ''}`}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/kunden/neu"><Plus aria-hidden />Neuer Kunde</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="secondary">
+            <Link href="/kunden/import"><Upload aria-hidden />Importieren</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/kunden/neu"><Plus aria-hidden />Neuer Kunde</Link>
+          </Button>
+        </div>
       </div>
 
       <Suspense fallback={null}><CustomerSearch /></Suspense>
@@ -46,7 +51,7 @@ export default async function CustomersPage({
             <p className="mx-auto max-w-sm text-[0.8125rem] leading-relaxed text-ink-muted">
               {q
                 ? 'Versuchen Sie einen anderen Namen.'
-                : 'Legen Sie den ersten Kunden an — Vor- und Nachname genügen.'}
+                : 'Legen Sie den ersten Kunden an — Vor- und Nachname genügen. Oder übernehmen Sie Ihre bestehende Liste als CSV.'}
             </p>
           </CardContent>
         </Card>
