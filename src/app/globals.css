@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * Design-Tokens (Architektur 4.6).
+ * Die Statusfarben werden von Rad, Liste, Badges UND dem PDF gemeinsam
+ * genutzt, damit das gedruckte Protokoll dieselbe Sprache spricht wie der
+ * Bildschirm.
+ */
+@theme {
+  --color-surface: oklch(99% 0.002 250);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-ink: oklch(25% 0.02 250);
+  --color-ink-muted: oklch(52% 0.02 250);
+  --color-line: oklch(92% 0.004 250);
+  --color-brand: oklch(52% 0.13 250);
+  --color-brand-soft: oklch(96% 0.02 250);
+
+  /* Beratungsstatus - immer zusammen mit einem Symbol verwenden,
+     nie Farbe allein (Architektur 4.3). */
+  --color-status-not-started: oklch(85% 0.01 250);
+  --color-status-in-progress: oklch(70% 0.12 250);
+  --color-status-no-action: oklch(65% 0.13 155);
+  --color-status-action: oklch(72% 0.15 65);
+  --color-status-declined: oklch(60% 0.02 250);
+  --color-status-follow-up: oklch(70% 0.12 300);
+
+  /* Mindesthoehe fuer Bedienelemente im Beratungsmodus (iPad im Gespraech). */
+  --spacing-touch: 3rem;
+}
+
+:root { color-scheme: light; }
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Dichte-Stufe fuer den Beratungsmodus: einmal zentral, nicht als
+   punktuelle Klassen-Overrides in Komponenten. */
+[data-density="advisor"] button,
+[data-density="advisor"] [role="button"],
+[data-density="advisor"] input,
+[data-density="advisor"] select {
+  min-height: var(--spacing-touch);
+  font-size: 1.0625rem;
+}

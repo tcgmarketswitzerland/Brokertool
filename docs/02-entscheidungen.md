@@ -86,11 +86,45 @@ Beraters. Keine hartcodierten deutschen Strings in Komponenten — auch nicht "v
 
 ---
 
+## ADR-005 — Datenhaltung Schweiz, Compute Frankfurt
+**Datum:** 2026-09-14 · **Status:** entschieden · **Schliesst:** offener Punkt O-2
+
+**Recherche:** Supabase Cloud bietet die Region `eu-central-2` (Zürich); sie wurde gemeinsam mit
+Paris, Stockholm und Ohio ausgerollt und unterstützt Datenbank und Read Replicas. Vercel hat
+**keine** Schweizer Compute-Region — in Europa stehen `fra1` (Frankfurt), `cdg1`, `arn1`, `dub1`
+und `lhr1` zur Verfügung.
+
+**Entscheidung:**
+- Supabase-Projekt in `eu-central-2` (Zürich): Datenbank, Auth und Storage.
+- Vercel-Functions auf `fra1` (Frankfurt) gepinnt.
+- Kundenaussage: *Daten ruhen in der Schweiz, Verarbeitung in der EU.* Nicht: „Schweizer Hosting"
+  ohne Zusatz.
+
+**Begründung:** Die Datenhaltung — und damit alles Personenbezogene im Ruhezustand — liegt in der
+Schweiz. Eigener Betrieb des Anwendungs-Compute bei einem Schweizer Anbieter (Exoscale,
+Infomaniak, cloudscale.ch) würde das vervollständigen, kostet aber geschätzt ein bis zwei Wochen
+Einrichtung plus dauerhaften Betriebsaufwand. Gemessen am Leitsatz „kann eine Person das in fünf
+Jahren warten" (Analyse 1.8) ist das jetzt der falsche Preis. Die Latenz Zürich–Frankfurt liegt bei
+wenigen Millisekunden und ist kein Gegenargument.
+
+**Wichtige Abgrenzung für den Vertrieb:** Datenresidenz ist nicht Unternehmenssitz. Supabase Inc.
+und Vercel Inc. bleiben US-Gesellschaften. Unter revDSG mit Auftragsbearbeitungsvertrag handhabbar,
+aber offenzulegen — diese Unterscheidung gehört in die Datenschutzerklärung und in jede
+Vertriebsaussage.
+
+**Konsequenz:**
+- `vercel.json` pinnt `"regions": ["fra1"]`; kein Edge-Runtime für Routen mit Personendaten.
+- Die Entkopplung aus Architektur 2.5 bleibt verbindlich, damit ein späterer Umzug des Compute in
+  die Schweiz ein Deployment-Thema bleibt und kein Umbau.
+- Zu prüfen beim Anlegen des Projekts: ob `eu-central-2` im gewählten Supabase-Tarif verfügbar ist.
+- Migration des Compute in die Schweiz wird als Option dokumentiert, nicht eingeplant — Auslöser
+  wäre ein Pilotkunde, der es verlangt.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |
 |---|---|---|
 | O-1 | Preismodell: reine Seat-Preise oder Tiers mit Nutzerlimiten | vor Phase 3 (Billing), nicht blockierend fürs MVP |
-| O-2 | Datenresidenz: reicht EU-Region, oder ist Hosting Schweiz ein hartes Verkaufsargument? | vor Projektaufsetzung in Schritt 5 — bestimmt die Supabase-Region |
 | O-3 | Juristische Prüfung der Compliance-Aussagen (revDSG, VAG, FIDLEG) vor Marketingaussagen | vor erstem zahlendem Kunden |
 | O-4 | AVV-Vorlage, Subprozessorenliste, Datenschutzerklärung, AGB, Exit-Konzept | vor erstem zahlendem Kunden |

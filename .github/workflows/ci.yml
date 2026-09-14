@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: brokertool_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    env:
+      TEST_DATABASE_URL: postgres://postgres@localhost:5432/brokertool_test
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Reihenfolge aus Projektplan 2: der Isolationsnachweis laeuft vor dem
+      # Build, damit ein Sicherheitsfehler nicht hinter einem Buildfehler
+      # verschwindet.
+      - name: Architekturregel R3
+        run: node scripts/check-service-role.mjs
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Unit-Tests
+        run: pnpm test:unit
+      - name: Datenbank- und RLS-Tests
+        run: pnpm test:db
+      - name: Build
+        run: pnpm build
