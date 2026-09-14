@@ -42,9 +42,20 @@ export function Button({
   className, variant, size, asChild = false, loading = false,
   children, disabled, ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot : 'button';
+  // Slot vertraegt genau ein Kind. Der Lade-Platzhalter wuerde ein zweites
+  // erzeugen - auch als null -, und die Komponente scheitert dann mit
+  // "Slot failed to slot onto its children". Deshalb der eigene Zweig:
+  // ein asChild-Knopf ist ohnehin meist ein Link und kennt kein Laden.
+  if (asChild) {
+    return (
+      <Slot className={cn(button({ variant, size }), className)} {...props}>
+        {children}
+      </Slot>
+    );
+  }
+
   return (
-    <Comp
+    <button
       className={cn(button({ variant, size }), className)}
       disabled={disabled ?? loading}
       aria-busy={loading || undefined}
@@ -52,7 +63,7 @@ export function Button({
     >
       {loading ? <Loader2 aria-hidden className="animate-spin" /> : null}
       {children}
-    </Comp>
+    </button>
   );
 }
 

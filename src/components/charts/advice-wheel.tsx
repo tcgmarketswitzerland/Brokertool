@@ -24,14 +24,46 @@ export type WheelSegment = {
   readonly isRequired: boolean;
 };
 
-const SIZE = 320;
-const CENTER = SIZE / 2;
-const OUTER = 150;
-const INNER = 78;
+// Der Zeichenbereich ist breiter als das Rad: die Beschriftungen stehen
+// aussen. Ohne sie waere das Rad als Praesentationselement wertlos - der
+// Kunde sieht sonst bunte Segmente ohne Bedeutung (Analyse 1.7).
+const WIDTH = 620;
+const HEIGHT = 400;
+const CX = WIDTH / 2;
+const CY = HEIGHT / 2;
+const OUTER = 148;
+const INNER = 76;
+const LABEL_R = OUTER + 16;
 const GAP = 0.014;          // Radiant zwischen den Segmenten
 
 function polar(angle: number, radius: number): [number, number] {
-  return [CENTER + radius * Math.cos(angle), CENTER + radius * Math.sin(angle)];
+  return [CX + radius * Math.cos(angle), CY + radius * Math.sin(angle)];
+}
+
+/**
+ * Lange Spartennamen auf hoechstens zwei Zeilen umbrechen. "Vorsorge und
+ * Pensionierung" passt sonst nicht in den Rand und ueberlagert das
+ * Nachbarsegment.
+ */
+function wrap(label: string, max = 16): string[] {
+  if (label.length <= max) return [label];
+  const words = label.split(' ');
+  const lines: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > max && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+
+  if (lines.length <= 2) return lines;
+  return [lines[0]!, `${lines.slice(1).join(' ').slice(0, max - 1)}…`];
 }
 
 function segmentPath(start: number, end: number): string {
@@ -90,10 +122,10 @@ export function AdviceWheel({
 
   return (
     <svg
-      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="group"
       aria-labelledby={titleId}
-      className={cn('h-auto w-full max-w-[min(80vw,360px)] select-none', className)}
+      className={cn('h-auto w-full max-w-[min(94vw,640px)] select-none', className)}
     >
       <title id={titleId}>
         Beratungsrad: {settled} von {segments.length} Themen erledigt
@@ -105,7 +137,13 @@ export function AdviceWheel({
         const end = (index + 1) * step - Math.PI / 2 - GAP / 2;
         const middle = (start + end) / 2;
         const [gx, gy] = polar(middle, (OUTER + INNER) / 2);
+        const [lx, ly] = polar(middle, LABEL_R);
         const active = segment.id === activeId;
+        // Rechts vom Mittelpunkt linksbuendig, links davon rechtsbuendig -
+        // sonst laufen die Beschriftungen ins Rad hinein.
+        const anchor = Math.cos(middle) > 0.08 ? 'start'
+                     : Math.cos(middle) < -0.08 ? 'end' : 'middle';
+        const lines = wrap(segment.label);
 
         return (
           <g
@@ -142,20 +180,35 @@ export function AdviceWheel({
             <g style={{ color: 'var(--color-surface)' }} className="pointer-events-none">
               <Glyph icon={segment.icon} x={gx} y={gy} />
             </g>
+
+            <text
+              x={lx}
+              y={ly - (lines.length - 1) * 6}
+              textAnchor={anchor}
+              dominantBaseline="middle"
+              className={cn(
+                'pointer-events-none text-[12.5px]',
+                active ? 'fill-[var(--color-ink)] font-semibold' : 'fill-[var(--color-ink-muted)]',
+              )}
+            >
+              {lines.map((line, i) => (
+                <tspan key={line} x={lx} dy={i === 0 ? 0 : 13}>{line}</tspan>
+              ))}
+            </text>
           </g>
         );
       })}
 
-      <circle cx={CENTER} cy={CENTER} r={INNER - 8} className="fill-[var(--color-surface)]" />
+      <circle cx={CX} cy={CY} r={INNER - 8} className="fill-[var(--color-surface)]" />
       <text
-        x={CENTER} y={CENTER - 6} textAnchor="middle"
+        x={CX} y={CY - 6} textAnchor="middle"
         className="fill-[var(--color-ink)] text-[30px] font-semibold [font-variant-numeric:tabular-nums]"
       >
         {settled}
         <tspan className="fill-[var(--color-ink-subtle)] text-[20px]">/{segments.length}</tspan>
       </text>
       <text
-        x={CENTER} y={CENTER + 18} textAnchor="middle"
+        x={CX} y={CY + 18} textAnchor="middle"
         className="fill-[var(--color-ink-muted)] text-[12px]"
       >
         Themen erledigt

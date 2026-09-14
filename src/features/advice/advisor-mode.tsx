@@ -155,7 +155,9 @@ export function AdvisorMode({
             </div>
 
             {overview === 'wheel' ? (
-              <div className="flex justify-center py-2">
+              // Das Rad fuellt die verbleibende Hoehe und sitzt mittig: es ist
+              // das Element, das der Kunde ansieht.
+              <div className="flex min-h-[min(58vh,520px)] items-center justify-center">
                 <AdviceWheel
                   segments={segments}
                   settled={progress.settled}
