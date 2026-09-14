@@ -1,157 +1,158 @@
 # Deine To-do-Liste
 
-Stand: 2026-09-14, nach Abschluss von Phase 0.
+Stand: 2026-09-14, nach Phase 4. Ersetzt die frühere Fassung.
 
-Diese Liste enthält **nur, was du selbst machen musst** — Dinge, die ich nicht für dich erledigen
-kann, weil sie Konten, Zahlungsmittel, Unterschriften oder fachliche Entscheidungen brauchen.
-Was ich entwickle, steht im Projektplan (`04-projektplan-mvp.md`).
-
-Reihenfolge ist bewusst: A blockiert die Entwicklung, B blockiert den ersten Verkauf, C und D
-laufen nebenher.
+Hier steht **nur, was du selbst machen musst** — Dinge, die ich nicht erledigen kann, weil sie
+Konten, Zahlungsmittel, Unterschriften oder fachliche Entscheidungen brauchen. Was ich entwickle,
+steht im Projektplan (`04-projektplan-mvp.md`).
 
 ---
 
-## A — Blockiert Phase 1 (Authentifizierung)
+## Wo wir stehen
 
-Ohne diese drei Punkte kann ich nicht weiterentwickeln. Aufwand insgesamt etwa **1–2 Stunden**.
+| Phase | Inhalt | Stand |
+|---|---|---|
+| 0 | Foundation, CI, RLS-Testharness | **fertig** |
+| 1 | Auth, Organisation, Rollen, Einladungen, Zwei-Faktor | **fertig** |
+| 2 | Kunden mit Haushalt/Personen, CSV-Import | **fertig** |
+| 3 | Advice Engine: Rad, Liste, Statusmodell, Command-Pipeline | **fertig** |
+| 4 | Bestehende Verträge, Vertragsübersicht | **fertig bis auf Dokumenten-Upload** |
+| 5 | Aufgaben für Kunde und Berater | offen |
+| 6 | Abschluss, Snapshot, Unterschrift | offen |
+| 7 | Zusammenfassung, PDF, E-Mail-Entwurf | offen |
+| 8 | Firmeneinstellungen, Branding, Spartenauswahl | teilweise |
+| 9 | QA, Demo-Daten, Härtung | offen |
 
-### A1 · Supabase-Projekt anlegen
-- [ ] Konto auf supabase.com, Organisation anlegen
-- [ ] Neues Projekt, **Region unbedingt `eu-central-2` (Zürich)** — ADR-005. Die Region lässt sich
-      später **nicht** ändern, ein Wechsel bedeutet Migration in ein neues Projekt
-- [ ] Datenbankpasswort erzeugen und in einem Passwortmanager ablegen
-- [ ] Falls Zürich im gewählten Tarif nicht auswählbar ist: **nicht ausweichen**, sondern mir
-      Bescheid geben — dann besprechen wir Frankfurt oder einen Tarifwechsel
-- [ ] Aus *Project Settings → API Keys* notieren: Project URL, **Publishable Key**
-      (`sb_publishable_…`) und einen **Secret Key** (`sb_secret_…`)
-- [ ] Die alten `anon`- und `service_role`-Keys **nicht** verwenden — Supabase schaltet sie bis
-      Ende 2026 ab
-
-> Der Secret Key umgeht sämtliche Sicherheitsregeln der Datenbank. Er gehört in den
-> Passwortmanager und niemals in eine Chatnachricht, ein Ticket oder das Repository.
-
-### A2 · Vercel-Projekt verbinden
-- [ ] Konto auf vercel.com, Repository `tcgmarketswitzerland/Brokertool` importieren
-- [ ] Region ist bereits über `vercel.json` auf `fra1` festgelegt — nichts einzustellen
-- [ ] Environment Variables setzen (Production **und** Preview):
-      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
-- [ ] Beim `SUPABASE_SECRET_KEY` das Schloss-Symbol aktivieren (Sensitive)
-- [ ] **Nicht** die Supabase-Integration unter *Optional Integrations* verwenden — sie legt ein
-      neues Supabase-Projekt an, bei dem die Region nicht sicher auf Zürich gesetzt werden kann
-- [ ] Tarif beachten: Der Hobby-Tarif ist nach Vercels Nutzungsbedingungen nicht für kommerzielle
-      Nutzung zugelassen. Zum Entwickeln genügt er; vor dem ersten zahlenden Kunden auf Pro
-      wechseln (Kostenpunkt prüfen auf vercel.com/pricing)
-- [ ] Prüfen, dass der erste Build durchläuft
-
-### A3 · Lokale Entwicklungsumgebung
-- [ ] `.env.example` nach `.env.local` kopieren und die Werte aus A1 eintragen
-- [ ] `pnpm install` und `pnpm dev` — die Seite muss unter localhost:3000 erscheinen
-- [ ] `pnpm verify` einmal ausführen; alles muss grün sein
+**219 Tests grün.** Datenbank, Vercel und alle 17 Migrationen sind produktiv in Zürich.
 
 ---
 
-## A4 · Access-Token-Hook aktivieren — sonst sehen Sie nichts
+## A — Jetzt: die Anwendung zum Laufen bringen
 
-Die Migration legt den Hook an, aktiviert ihn aber nicht. Ohne diesen Schritt können Sie sich
-registrieren und anmelden, sehen danach aber **keine Daten** — weil `auth_org_id()` NULL liefert
-und alle Sicherheitsregeln korrekt dichtmachen. Das sieht aus wie ein Fehler, ist aber die
+### A1 · Access-Token-Hook aktivieren  ⚠️ blockiert alles
+
+Die Migration hat den Hook angelegt, aber **nicht aktiviert**. Ohne diesen Schritt kannst du dich
+registrieren und anmelden, siehst danach aber **keine Daten** — weil die Mandantenkennung im Token
+fehlt und alle Sicherheitsregeln korrekt dichtmachen. Das sieht aus wie ein Fehler, ist aber die
 Absicherung bei der Arbeit.
 
 - [ ] Supabase → **Authentication → Hooks → Customize Access Token (JWT) Claims**
 - [ ] Funktion `public.custom_access_token_hook` auswählen und aktivieren
-- [ ] Danach einmal ab- und wieder anmelden, damit ein neues Token ausgestellt wird
+- [ ] Einmal ab- und wieder anmelden, damit ein neues Token ausgestellt wird
+
+### A2 · Erster Durchlauf
+
+- [ ] Auf deiner Vercel-URL eine Firma einrichten
+- [ ] Einen Kunden anlegen (Vor- und Nachname genügen)
+- [ ] Eine Beratung starten und ein paar Sparten durchklicken
+- [ ] Einen bestehenden Vertrag erfassen
+- [ ] **Auf dem iPad ausprobieren**, nicht nur am Notebook
+
+Wenn dabei etwas klemmt: Screenshot schicken, ich schaue es an.
+
+### A3 · Was du dir ohne Anmeldung anschauen kannst
+
+- `/design` — alle Bausteine in hell und dunkel
+- `/design/beratung` — der Beratungsmodus mit Beispieldaten
 
 ---
 
-## B — Blockiert den ersten zahlenden Kunden
+## B — Fachlicher Input, den nur du liefern kannst
 
-Kein Entwicklungsaufwand, aber ohne diese Punkte kannst du nicht verkaufen. **Jetzt anfangen**,
-nicht nach dem MVP — ein Anwaltstermin hat Vorlaufzeit.
+Diese Punkte brauche ich für Phase 6 und 7. **Etwa zwei bis drei Wochen Vorlauf**, aber je früher,
+desto besser.
 
-### B1 · Juristische Grundlagen
-- [ ] Anwalt oder Datenschutzberater mit Erfahrung in revDSG und Versicherungsvermittlung suchen
-- [ ] **Prüfen lassen, bevor du damit wirbst:** deine Aussagen zu revDSG, VAG und FIDLEG.
-      Ich habe sie in `01-produkt-und-architektur-analyse.md` nach bestem Wissen eingeordnet,
-      aber es ist dein Verkaufsargument — da darf nichts wackeln
-- [ ] Klären lassen: Welche Beweiskraft hat eine Touch-Unterschrift auf dem iPad? Reicht sie für
-      die Dokumentation einer ausdrücklichen Kundenablehnung?
-- [ ] Klären lassen: Welche Aufbewahrungsfrist gilt für Beratungsprotokolle? Davon hängt das
-      Lösch- und Anonymisierungskonzept ab (offener Punkt O-3)
+### B1 · Pflichtsparten bestätigen
+- [ ] Als Pflicht markiert sind derzeit: **Hausrat, Privathaftpflicht, Krankenkasse, Risiko,
+      Vorsorge**. Pflicht heisst: Die Beratung lässt sich nicht abschliessen, bevor jede davon ein
+      Ergebnis hat oder ausdrücklich übersprungen wurde. Stimmt die Auswahl?
 
-### B2 · Vertragsdokumente
-- [ ] Auftragsbearbeitungsvertrag (AVV) als Vorlage — du bist Auftragsbearbeiter, der Broker ist
+### B2 · Textbausteine
+- [ ] **Wie formulierst du eine dokumentierte Ablehnung?** Ein Mustersatz, den das Protokoll
+      verwendet. Das ist der Satz, auf den es im Streitfall ankommt
+- [ ] Standardtext für die Abschluss-E-Mail an den Kunden
+- [ ] Disclaimer für die Vorsorgeanalyse (Grobanalyse, keine verbindliche Leistungszusage)
+
+### B3 · Branding fürs Protokoll
+- [ ] Dein Logo als SVG oder PNG mit transparentem Hintergrund, mindestens 600 px breit
+- [ ] Eine Hausfarbe als Hex-Wert
+- [ ] **Ein Beispiel eines Beratungsprotokolls, wie du es heute erstellst** — als Vorlage für das
+      PDF. Das ist der wichtigste Punkt in diesem Abschnitt: ohne ein reales Muster baue ich ein
+      Protokoll nach meiner Vorstellung, nicht nach deiner Praxis
+
+---
+
+## C — Vor dem ersten zahlenden Kunden
+
+Kein Entwicklungsaufwand, aber ohne diese Punkte kannst du nicht verkaufen.
+
+### C1 · Juristisch
+- [ ] Anwalt oder Datenschutzberater mit Erfahrung in revDSG und Versicherungsvermittlung
+- [ ] **Deine Compliance-Aussagen prüfen lassen**, bevor du damit wirbst. Ich habe sie nach bestem
+      Wissen eingeordnet, aber es ist dein Verkaufsargument — da darf nichts wackeln
+- [ ] Klären: Welche Beweiskraft hat eine Touch-Unterschrift auf dem iPad für die Dokumentation
+      einer ausdrücklichen Kundenablehnung?
+- [ ] Klären: Welche Aufbewahrungsfrist gilt für Beratungsprotokolle? Davon hängt das Lösch- und
+      Anonymisierungskonzept ab
+
+### C2 · Verträge und Unterlagen
+- [ ] Auftragsbearbeitungsvertrag als Vorlage — du bist Auftragsbearbeiter, der Broker ist
       Verantwortlicher
 - [ ] Liste der Unterauftragsbearbeiter: Supabase (Zürich), Vercel (Frankfurt), später Mailprovider
 - [ ] Datenschutzerklärung mit der Formulierung aus ADR-005: *Daten ruhen in der Schweiz,
       Verarbeitung in der EU.* Nicht „Schweizer Hosting" ohne Zusatz
 - [ ] AGB
-- [ ] Bearbeitungsverzeichnis und TOM-Beschreibung — ich liefere dir den technischen Teil zu,
+- [ ] Bearbeitungsverzeichnis und TOM-Beschreibung — den technischen Teil liefere ich zu,
       inklusive der Begründung für die lokale Zwischenspeicherung im Beratungsmodus (ADR-002)
 - [ ] Exit-Konzept: Was passiert mit den Daten, wenn du aufhörst? Diese Frage stellt dir jeder
       seriöse Broker
 
----
-
-## C — Fachlicher Input, den nur du liefern kannst
-
-Diese Punkte brauche ich für Phase 3 (Advice Engine). **Bis dahin sind es etwa 4–6 Wochen** —
-aber je früher, desto besser, weil sie den Spartenkatalog bestimmen.
-
-### C1 · Spartenkatalog bestätigen
-- [ ] Die 15 Sparten aus deinem Konzept durchgehen: fehlt etwas? Ist etwas überflüssig?
-- [ ] Reihenfolge festlegen — in welcher Abfolge führst du ein Gespräch tatsächlich?
-- [ ] Für jede Sparte: **Pflicht oder optional?** Das ist das Feld `is_required` und entscheidet,
-      was für den Abschluss zwingend ein Ergebnis braucht. Es ist die technische Umsetzung deines
-      Versprechens „kein Bereich wird vergessen"
-- [ ] Je Sparte zwei bis drei typische Gesprächsfragen, die das Formular stellen soll
-
-### C2 · Textbausteine
-- [ ] Wie formulierst du eine dokumentierte Ablehnung? Ein Mustersatz, den das Protokoll verwendet
-- [ ] Standardtext für die Abschluss-E-Mail an den Kunden
-- [ ] Disclaimer für die Vorsorgeanalyse (Grobanalyse, keine verbindliche Leistungszusage)
-
-### C3 · Branding
-- [ ] Dein Logo als SVG oder PNG mit transparentem Hintergrund, mindestens 600 px breit
-- [ ] Eine Hausfarbe als Hex-Wert
-- [ ] Ein Beispiel eines Beratungsprotokolls, wie du es heute erstellst — als Vorlage für das PDF
+### C3 · Laufende Kosten, die du einplanen solltest
+- [ ] **Vercel Pro** (ca. USD 20/Monat). Der Hobby-Tarif ist nach Vercels Nutzungsbedingungen nicht
+      für kommerzielle Nutzung zugelassen. Zum Entwickeln reicht er, vor dem ersten zahlenden
+      Kunden nicht mehr
+- [ ] **Supabase Pro** (ca. USD 25/Monat) — der Gratis-Tarif pausiert Projekte bei Inaktivität und
+      hat kein tägliches Backup. Für echte Kundendaten nicht vertretbar
+- [ ] **Eigener Mailversand** (Resend, Postmark, o. ä., ab ca. USD 15/Monat). Aktuell verschickt
+      Supabase die Bestätigungs- und Passwortmails über seinen eingebauten Dienst — mit niedrigem
+      Stundenlimit und von einer Supabase-Adresse. Für Tests genügt das, für einen Pilotberater
+      nicht
 
 ---
 
 ## D — Am wichtigsten, und am leichtesten aufzuschieben
 
 ### D1 · Pilotberater gewinnen
-- [ ] **Zwei bis drei selbstständige Broker** finden, die bereit sind, ab Phase 7 mit echten Kunden
-      zu testen
-- [ ] Mit ihnen vorab klären: Welches Maklersystem nutzen sie heute? Können sie ihre Kundenliste
-      als CSV exportieren?
+- [ ] **Zwei bis drei selbstständige Broker**, die ab Phase 7 mit echten Kunden testen
+- [ ] Vorab klären: Welches Maklersystem nutzen sie heute? Können sie ihre Kundenliste als CSV
+      exportieren? (Der Import ist gebaut und wartet)
 - [ ] Fragen, was sie **heute** am meisten nervt — und ob es das ist, was wir bauen
 
 > Ein Pilotberater, der ab Phase 7 mit echten Kunden arbeitet, ist mehr wert als zwei zusätzliche
 > Entwicklungswochen. Dieser Punkt entscheidet stärker über den Erfolg als jede technische
 > Entscheidung in diesem Projekt — und er ist der einzige, den niemand ausser dir erledigen kann.
 
-### D2 · Preismodell entscheiden (offener Punkt O-1)
-- [ ] Dein Konzept nennt zwei sich widersprechende Modelle: CHF 39 pro Benutzer gegenüber
-      CHF 79 für bis zu drei Benutzer, also CHF 26 pro Benutzer
-- [ ] Empfehlung: reine Preise pro Arbeitsplatz. Einfacher zu erklären und zu implementieren als
-      Stufen mit Nutzerlimiten
-- [ ] Nicht dringend — wird erst bei Billing in Phase 3 nach dem MVP gebraucht
+### D2 · Preismodell entscheiden
+- [ ] Dein Konzept nennt zwei sich widersprechende Modelle: CHF 39 pro Benutzer gegenüber CHF 79
+      für bis zu drei Benutzer, also CHF 26 pro Benutzer
+- [ ] Empfehlung: reine Preise pro Arbeitsplatz. Einfacher zu erklären und zu implementieren
+- [ ] Nicht dringend — wird erst bei Billing nach dem MVP gebraucht
 
 ---
 
-## Was ich mache, sobald A erledigt ist
+## Was ich als Nächstes mache
 
 | Phase | Inhalt | Aufwand |
 |---|---|---|
-| 1 | Authentifizierung, Organisation, Rollen, Einladungen | 6–9 PT |
-| 2 | Kunden mit Haushalt/Personen, CSV-Import | 5–7 PT |
-| 3 | Advice Engine: Rad, Statusmodell, Command-Pipeline | 15–20 PT |
-| … | siehe `04-projektplan-mvp.md` | bis 91 PT |
+| 5 | Aufgaben für Kunde und Berater, aus dem Gespräch heraus erfasst | 3–4 PT |
+| 6 | Beratung abschliessen, Snapshot einfrieren, Kundenunterschrift | 6–8 PT |
+| 7 | Zusammenfassung, PDF-Protokoll, E-Mail-Entwurf | 8–12 PT |
+| 8 | Firmeneinstellungen, Logo, Spartenauswahl je Firma | 4–6 PT |
+| 4b | Dokumenten-Upload (Policen als PDF) | 2–3 PT |
+| 9 | QA, Demo-Daten, iPad-Durchlauf, Restore-Test | 6–10 PT |
 
-Ohne A1 kann ich Phase 1 nur teilweise vorbereiten: Migrationen, Domänenlogik und Tests gehen,
-aber der Custom Access Token Hook und das Cookie-Handling in der Middleware lassen sich nicht
-gegen Stubs entwickeln. Genau diese beiden Stellen habe ich im Projektplan als
-„kostet länger als gedacht" markiert.
+Nach Phase 7 ist das MVP **demonstrierbar**: Beratung führen, abschliessen, Protokoll übergeben.
+Das ist der Moment für die Pilotberater aus D1.
 
 ---
 
@@ -159,6 +160,6 @@ gegen Stubs entwickeln. Genau diese beiden Stellen habe ich im Projektplan als
 
 Wenn du diese Woche nur drei Dinge machst:
 
-1. **Supabase-Projekt in Zürich anlegen** (A1) — 20 Minuten, blockiert alles andere
-2. **Anwaltstermin vereinbaren** (B1) — hat Vorlaufzeit, also jetzt anstossen
+1. **Access-Token-Hook aktivieren** (A1) — fünf Minuten, ohne das läuft nichts
+2. **Einmal auf dem iPad durchklicken** (A2) — und mir sagen, was sich falsch anfühlt
 3. **Einen Broker anrufen** (D1) — und fragen, was ihn heute am meisten nervt

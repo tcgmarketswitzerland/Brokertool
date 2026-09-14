@@ -19,8 +19,18 @@ Die fachlichen und technischen Grundlagen liegen in `docs/` und sind in dieser R
 
 ## Stand
 
-**Phase 0 (Foundation) abgeschlossen.** Es existiert noch keine Anwendungsfunktionalität —
-das Gerüst erzwingt die Architekturregeln, damit spätere Fehlentwicklungen sofort auffallen.
+**Phasen 0 bis 4 abgeschlossen**, 219 Tests grün, 17 Migrationen produktiv.
+
+- Authentifizierung, Organisationen, Rollen, Einladungen, Zwei-Faktor-Anmeldung
+- Kundenverwaltung mit Haushalt/Personen-Trennung und CSV-Import
+- Advice Engine: Beratungsrad, Statusmodell, Command-Pipeline mit Offline-Sicherung
+- Bestehende Verträge und Vertragsübersicht
+
+Offen: Aufgaben, Abschluss mit Unterschrift, PDF-Protokoll, Dokumenten-Upload.
+Nächste Schritte für den Betreiber: `docs/06-todo.md`.
+
+Ohne Anmeldung anzusehen: `/design` (Designsystem) und `/design/beratung` (Beratungsmodus
+mit Beispieldaten).
 
 ## Entwicklung
 
