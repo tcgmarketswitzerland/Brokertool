@@ -83,7 +83,16 @@ describe('Mandantentrennung', () => {
   it('organization_id wird beim Insert aus dem JWT gesetzt, nicht vom Client', async () => {
     // Regel R5 (Architektur 1): der Spalten-Default macht es unmoeglich,
     // versehentlich in einen fremden Mandanten zu schreiben.
+    //
+    // Ausgenommen sind Tabellen mit eigenem Policy-Satz: in sie schreibt kein
+    // Nutzer direkt, sondern ein Trigger beziehungsweise eine Funktion, die
+    // die Organisation ausdruecklich setzt.
+    const { rows: manualRows } = await client.query<{ t: string }>(
+      'select unnest(public.rls_manual_tables()) as t');
+    const manual = new Set(manualRows.map((r) => r.t));
+
     for (const table of tables) {
+      if (manual.has(table)) continue;
       const { rows } = await client.query<{ default_expr: string | null }>(`
         select pg_get_expr(d.adbin, d.adrelid) as default_expr
           from pg_attribute a
@@ -92,8 +101,34 @@ describe('Mandantentrennung', () => {
           left join pg_attrdef d on d.adrelid = c.oid and d.adnum = a.attnum
          where n.nspname = 'public' and c.relname = $1 and a.attname = 'organization_id'`,
         [table]);
-      expect(rows[0]?.default_expr, `${table}: kein Default auf organization_id`)
+      expect(rows[0]?.default_expr ?? '', `${table}: kein Default auf organization_id`)
         .toContain('auth_org_id');
+    }
+  });
+
+  it('anfuegende Tabellen lassen sich weder aendern noch loeschen', async () => {
+    // Der Generator erkennt Mandantentabellen an der Spalte organization_id
+    // und hatte deshalb auch das Audit-Log erfasst - inklusive Update- und
+    // Delete-Policy. Da Postgres permissive Policies mit ODER verknuepft, war
+    // die handgeschriebene Beschraenkung wirkungslos. Dieser Test haelt die
+    // Ausschlussliste dauerhaft ehrlich.
+    const { rows: manualRows } = await client.query<{ t: string }>(
+      'select unnest(public.rls_manual_tables()) as t');
+
+    for (const { t } of manualRows) {
+      const exists = await client.query('select to_regclass($1) as oid', [`public.${t}`]);
+      if (!exists.rows[0]?.oid) continue;   // Tabelle kommt erst in einer spaeteren Phase
+
+      const { rows } = await client.query<{ cmd: string; polname: string }>(`
+        select case p.polcmd when 'w' then 'UPDATE' when 'd' then 'DELETE'
+                             when '*' then 'ALL' else p.polcmd::text end as cmd,
+               p.polname
+          from pg_policy p
+         where p.polrelid = ($1)::regclass
+           and p.polcmd in ('w','d','*')`, [`public.${t}`]);
+
+      expect(rows.map((r) => `${r.polname} (${r.cmd})`),
+        `${t}: darf keine Update- oder Delete-Policy haben`).toEqual([]);
     }
   });
 });
