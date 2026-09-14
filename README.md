@@ -63,7 +63,7 @@ Diese Regeln werden durch CI erzwungen, nicht durch Disziplin (siehe `docs/03-ar
 |---|---|
 | R1 | `src/domain/**` ist framework-frei — kein React, Next.js oder Supabase |
 | R2 | `supabase-js` erscheint nicht in `src/components` und `src/app` |
-| R3 | Der `service_role`-Key wird nur in `src/lib/supabase/admin.ts` gelesen |
+| R3 | Der geheime Supabase-Schluessel wird nur in `src/lib/supabase/admin.ts` gelesen |
 | R4 | Jede Tabelle hat RLS **und** FORCE RLS und mindestens eine Policy |
 | R5 | `organization_id` kommt nie aus Client-Input (Spalten-Default) |
 | R8 | Der Logger nimmt nur IDs und Enums, keine Personendaten |

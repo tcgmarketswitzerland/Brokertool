@@ -121,6 +121,22 @@ Vertriebsaussage.
   wäre ein Pilotkunde, der es verlangt.
 
 
+## ADR-006 — Neue Supabase-API-Schlüssel statt anon/service_role
+**Datum:** 2026-09-14 · **Status:** entschieden
+
+**Entscheidung:** Das Projekt verwendet die neuen Supabase-Schlüssel
+(`sb_publishable_…` / `sb_secret_…`). Die Umgebungsvariablen heissen entsprechend
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` und `SUPABASE_SECRET_KEY`.
+
+**Begründung:** Supabase schaltet die alten `anon`- und `service_role`-Keys bis Ende 2026 ab. Ein
+neues Projekt darauf zu starten, hiesse eine Migration über alle Umgebungen einzuplanen, bevor der
+erste Kunde da ist. Die neuen Schlüssel sind funktional gleichwertig und direkt einsetzbar.
+
+**Konsequenz:** Die Variablennamen bilden ab, was tatsächlich darin steht — ein publishable Key in
+einer Variablen namens `ANON_KEY` wäre in sechs Monaten eine Fehlerquelle. Regel R3 und der
+Baumscan in `scripts/check-service-role.mjs` gelten unverändert für `SUPABASE_SECRET_KEY`.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |

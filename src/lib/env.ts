@@ -16,7 +16,7 @@ const serverSchema = z.object({
 
 const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 });
 
 function parse<T extends z.ZodType>(schema: T, source: Record<string, string | undefined>, scope: string): z.infer<T> {
@@ -37,5 +37,5 @@ export const serverEnv = (): z.infer<typeof serverSchema> =>
 export const clientEnv = (): z.infer<typeof clientSchema> =>
   parse(clientSchema, {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   }, 'Client');

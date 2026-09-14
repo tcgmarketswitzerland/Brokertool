@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { logger, safeId } from '@/lib/logger';
 
 /**
- * Die einzige Stelle im Projekt, die den service_role-Key liest (Regel R3,
- * Architektur 8.5). Dieser Schluessel umgeht RLS vollstaendig - damit haengt
+ * Die einzige Stelle im Projekt, die den geheimen Supabase-Schluessel liest (frueher service_role) (Regel R3,
+ * Architektur 8.5). Er umgeht RLS vollstaendig - damit haengt
  * die gesamte Mandantentrennung wieder nur am Anwendungscode, genau das,
  * was Konzeptpunkt 19 ausschliesst.
  *
@@ -33,12 +33,12 @@ let cached: SupabaseClient | null = null;
 export function createAdminClient(reason: AdminReason, actorUserId?: string): SupabaseClient {
   const parsed = schema.safeParse({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    serviceRoleKey: process.env.SUPABASE_SECRET_KEY,
   });
 
   if (!parsed.success) {
     // Bewusst ohne Werte: eine Fehlermeldung darf kein Secret enthalten.
-    throw new Error('service_role-Client ist nicht konfiguriert');
+    throw new Error('Supabase-Admin-Client ist nicht konfiguriert');
   }
 
   logger.warn('admin_client_used', {

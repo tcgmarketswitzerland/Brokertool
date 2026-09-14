@@ -12,7 +12,7 @@ import { join, relative } from 'node:path';
 
 const ROOT = process.cwd();
 const ALLOWED = new Set(['src/lib/supabase/admin.ts']);
-const NEEDLE = 'SUPABASE_SERVICE_ROLE_KEY';
+const NEEDLE = 'SUPABASE_SECRET_KEY';
 const SEARCH_DIRS = ['src', 'app', 'scripts'];
 
 const offenders = [];

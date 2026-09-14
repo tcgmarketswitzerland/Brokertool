@@ -23,7 +23,7 @@ jobs:
     env:
       TEST_DATABASE_URL: postgres://postgres@localhost:5432/brokertool_test
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
 
     steps:
       - uses: actions/checkout@v4

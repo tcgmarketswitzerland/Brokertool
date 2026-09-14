@@ -22,17 +22,20 @@ Ohne diese drei Punkte kann ich nicht weiterentwickeln. Aufwand insgesamt etwa *
 - [ ] Datenbankpasswort erzeugen und in einem Passwortmanager ablegen
 - [ ] Falls Zürich im gewählten Tarif nicht auswählbar ist: **nicht ausweichen**, sondern mir
       Bescheid geben — dann besprechen wir Frankfurt oder einen Tarifwechsel
-- [ ] Aus *Project Settings → API* notieren: Project URL, `anon`-Key, `service_role`-Key
+- [ ] Aus *Project Settings → API Keys* notieren: Project URL, **Publishable Key**
+      (`sb_publishable_…`) und einen **Secret Key** (`sb_secret_…`)
+- [ ] Die alten `anon`- und `service_role`-Keys **nicht** verwenden — Supabase schaltet sie bis
+      Ende 2026 ab
 
-> Der `service_role`-Key umgeht sämtliche Sicherheitsregeln der Datenbank. Er gehört in den
+> Der Secret Key umgeht sämtliche Sicherheitsregeln der Datenbank. Er gehört in den
 > Passwortmanager und niemals in eine Chatnachricht, ein Ticket oder das Repository.
 
 ### A2 · Vercel-Projekt verbinden
 - [ ] Konto auf vercel.com, Repository `tcgmarketswitzerland/Brokertool` importieren
 - [ ] Region ist bereits über `vercel.json` auf `fra1` festgelegt — nichts einzustellen
 - [ ] Environment Variables setzen (Production **und** Preview):
-      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] Beim `SUPABASE_SERVICE_ROLE_KEY` das Schloss-Symbol aktivieren (Sensitive)
+      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
+- [ ] Beim `SUPABASE_SECRET_KEY` das Schloss-Symbol aktivieren (Sensitive)
 - [ ] **Nicht** die Supabase-Integration unter *Optional Integrations* verwenden — sie legt ein
       neues Supabase-Projekt an, bei dem die Region nicht sicher auf Zürich gesetzt werden kann
 - [ ] Tarif beachten: Der Hobby-Tarif ist nach Vercels Nutzungsbedingungen nicht für kommerzielle
