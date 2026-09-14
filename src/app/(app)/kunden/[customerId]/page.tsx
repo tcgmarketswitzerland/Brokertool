@@ -8,6 +8,9 @@ import {
 import { StartSessionButton } from '@/features/advice/start-session-button';
 import { CUSTOMER_TYPE_LABEL } from '@/domain/customer/types';
 import { getCustomer } from '@/features/customers/queries';
+import { listInsurers, listPolicies } from '@/features/policies/queries';
+import { listTopicOptions } from '@/features/policies/topic-options';
+import { PolicySection } from '@/features/policies/policy-section';
 import { CustomerSettingsForm } from '@/features/customers/customer-settings-form';
 import { PersonCard } from '@/features/customers/person-card';
 
@@ -31,6 +34,10 @@ export default async function CustomerPage({
   const { customerId } = await params;
   const customer = await getCustomer(customerId);
   if (!customer) notFound();
+
+  const [policies, insurers, topics] = await Promise.all([
+    listPolicies(customerId), listInsurers(), listTopicOptions(),
+  ]);
 
   const hasPrimary = customer.persons.some((p) => p.personRole === 'PRIMARY');
 
@@ -71,6 +78,25 @@ export default async function CustomerPage({
           ))}
           <PersonCard customerId={customer.id} />
         </div>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Bestehende Verträge</CardTitle>
+          <CardDescription>
+            Versicherer und Prämie genügen. Deckungen, Selbstbehalte und Policennummern
+            erfasst das Backoffice später nach.
+          </CardDescription>
+        </CardHeader>
+        <PolicySection
+          customerId={customer.id}
+          policies={policies}
+          topics={topics}
+          insurers={insurers}
+          persons={customer.persons.map((p) => ({
+            id: p.id, name: `${p.firstName} ${p.lastName}`,
+          }))}
+        />
       </Card>
 
       <Card>

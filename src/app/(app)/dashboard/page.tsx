@@ -3,21 +3,28 @@ import Link from 'next/link';
 import { CalendarClock, CheckSquare, FileText, Plus, Users } from 'lucide-react';
 import { Button, Card, CardContent } from '@/components/ui';
 import { countCustomers } from '@/features/customers/queries';
+import { listSessions } from '@/features/advice/queries';
+import { listUpcomingCancellations } from '@/features/policies/queries';
 
 export const metadata: Metadata = { title: 'Übersicht' };
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const customers = await countCustomers();
+  const [customers, sessions, upcoming] = await Promise.all([
+    countCustomers(), listSessions(), listUpcomingCancellations(),
+  ]);
+  const open = sessions.filter((s) => s.status === 'IN_PROGRESS' || s.status === 'DRAFT').length;
 
   // Die übrigen Kennzahlen entstehen in Phase 8: sie aggregieren Daten, die
   // es vor Phase 5 noch gar nicht gibt. Ein erfundener Wert wäre schlimmer
   // als ein ehrlicher Strich.
   const tiles = [
     { label: 'Kunden', value: String(customers), Icon: Users },
-    { label: 'Offene Beratungen', value: '—', Icon: FileText },
+    { label: 'Offene Beratungen', value: String(open), Icon: FileText },
+    // Aufgaben entstehen in Phase 5. Ein erfundener Wert waere schlimmer als
+    // ein ehrlicher Strich.
     { label: 'Offene Aufgaben', value: '—', Icon: CheckSquare },
-    { label: 'Bald kündbare Policen', value: '—', Icon: CalendarClock },
+    { label: 'Bald kündbar', value: String(upcoming.length), Icon: CalendarClock },
   ] as const;
 
   return (
