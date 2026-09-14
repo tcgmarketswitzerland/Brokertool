@@ -37,12 +37,18 @@
   --line:            oklch(91.5% 0.005 258);
   --line-strong:     oklch(85% 0.008 258);
 
-  /* --- Akzent: ein tiefes Tintenblau, nicht das uebliche Signalblau ---- */
-  --accent:          oklch(47% 0.116 250);
-  --accent-hover:    oklch(42% 0.118 250);
-  --accent-soft:     oklch(95.5% 0.021 250);
-  --accent-border:   oklch(87% 0.045 250);
-  --accent-ink:      oklch(38% 0.11 250);
+  /* --- Akzent: Petrol -------------------------------------------------
+     Ein tiefes, leicht cyanstichiges Blau. Bewusst nicht das
+     Versicherungs-Marineblau, mit dem sich die halbe Branche gleich
+     anfuehlt - und bewusst kein Violett, der Ton, an dem man derzeit jede
+     zweite generierte Oberflaeche erkennt.
+     Der Abstand zum Statusgruen bei Farbton 158 betraegt rund 55 Grad,
+     genug, um beides im Rad nicht zu verwechseln.                        */
+  --accent:          oklch(51% 0.122 212);
+  --accent-hover:    oklch(45% 0.124 212);
+  --accent-soft:     oklch(95.5% 0.028 212);
+  --accent-border:   oklch(85% 0.055 212);
+  --accent-ink:      oklch(40% 0.115 212);
 
   /* --- Rueckmeldungen ------------------------------------------------- */
   --danger:          oklch(50% 0.152 25);
@@ -58,13 +64,13 @@
      einen relevanten Teil der Nutzer nicht unterscheidbar - und das Rad
      wird dem Kunden gezeigt.                                              */
   --status-not-started: oklch(80% 0.008 258);
-  --status-progress:    oklch(60% 0.115 250);
+  --status-progress:    oklch(58% 0.12 212);
   --status-no-action:   oklch(55% 0.115 158);
   --status-action:      oklch(62% 0.145 62);
   --status-declined:    oklch(56% 0.028 300);
   --status-follow-up:   oklch(56% 0.115 305);
 
-  --focus-ring:      oklch(55% 0.14 250);
+  --focus-ring:      oklch(56% 0.135 212);
 
   /* --- Form ----------------------------------------------------------- */
   --radius-sm: 0.25rem;
@@ -94,11 +100,11 @@
     --line:            oklch(30% 0.016 262);
     --line-strong:     oklch(39% 0.018 262);
 
-    --accent:          oklch(72% 0.112 250);
-    --accent-hover:    oklch(78% 0.108 250);
-    --accent-soft:     oklch(27% 0.045 252);
-    --accent-border:   oklch(38% 0.07 252);
-    --accent-ink:      oklch(82% 0.09 250);
+    --accent:          oklch(74% 0.115 205);
+    --accent-hover:    oklch(80% 0.11 205);
+    --accent-soft:     oklch(27% 0.05 210);
+    --accent-border:   oklch(38% 0.075 210);
+    --accent-ink:      oklch(84% 0.095 205);
 
     --danger:          oklch(70% 0.138 24);
     --danger-soft:     oklch(27% 0.055 25);
@@ -109,13 +115,13 @@
     --warning-soft:    oklch(25% 0.042 76);
 
     --status-not-started: oklch(38% 0.012 260);
-    --status-progress:    oklch(68% 0.115 250);
+    --status-progress:    oklch(70% 0.115 205);
     --status-no-action:   oklch(70% 0.115 158);
     --status-action:      oklch(76% 0.13 68);
     --status-declined:    oklch(56% 0.028 300);
     --status-follow-up:   oklch(70% 0.115 305);
 
-    --focus-ring:      oklch(72% 0.12 250);
+    --focus-ring:      oklch(74% 0.12 205);
 
     --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.3),
                   0 8px 24px -6px oklch(0% 0 0 / 0.5);
@@ -136,11 +142,11 @@
   --ink-inverted:    oklch(15.5% 0.014 262);
   --line:            oklch(30% 0.016 262);
   --line-strong:     oklch(39% 0.018 262);
-  --accent:          oklch(72% 0.112 250);
-  --accent-hover:    oklch(78% 0.108 250);
-  --accent-soft:     oklch(27% 0.045 252);
-  --accent-border:   oklch(38% 0.07 252);
-  --accent-ink:      oklch(82% 0.09 250);
+  --accent:          oklch(74% 0.115 205);
+  --accent-hover:    oklch(80% 0.11 205);
+  --accent-soft:     oklch(27% 0.05 210);
+  --accent-border:   oklch(38% 0.075 210);
+  --accent-ink:      oklch(84% 0.095 205);
   --danger:          oklch(70% 0.138 24);
   --danger-soft:     oklch(27% 0.055 25);
   --danger-border:   oklch(38% 0.09 25);
@@ -149,12 +155,12 @@
   --warning:         oklch(79% 0.115 76);
   --warning-soft:    oklch(25% 0.042 76);
   --status-not-started: oklch(38% 0.012 260);
-  --status-progress:    oklch(68% 0.115 250);
+  --status-progress:    oklch(70% 0.115 205);
   --status-no-action:   oklch(70% 0.115 158);
   --status-action:      oklch(76% 0.13 68);
   --status-declined:    oklch(56% 0.028 300);
   --status-follow-up:   oklch(70% 0.115 305);
-  --focus-ring:      oklch(72% 0.12 250);
+  --focus-ring:      oklch(74% 0.12 205);
   --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.3),
                 0 8px 24px -6px oklch(0% 0 0 / 0.5);
   color-scheme: dark;

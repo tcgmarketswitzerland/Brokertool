@@ -110,8 +110,12 @@ describe('Standardvorlage bei Firmengruendung', () => {
              where t2.organization_id = $1 and t2.is_default
              order by v.version desc limit 1)
         order by t.display_order`, [orgA]);
+    // Fachliche Vorgabe: alle elf Sparten sind Pflicht. Das funktioniert
+    // nur, weil Ueberspringen eine vollwertige, protokollierte Entscheidung
+    // ist und kein Schlupfloch.
     expect(rows.map((r) => r.slug)).toEqual([
-      'hausrat', 'privathaftpflicht', 'krankenkasse', 'risiko', 'vorsorge',
+      'hausrat', 'privathaftpflicht', 'gebaeude', 'motorfahrzeug', 'rechtsschutz',
+      'reise', 'cyber', 'krankenkasse', 'risiko', 'vorsorge', 'hypothek',
     ]);
   });
 
