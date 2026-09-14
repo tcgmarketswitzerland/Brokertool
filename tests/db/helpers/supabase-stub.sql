@@ -29,6 +29,10 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'service_role') then
     create role service_role nologin bypassrls;
   end if;
+  -- Rolle, unter der Supabase den Access-Token-Hook ausfuehrt
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    create role supabase_auth_admin nologin;
+  end if;
 end $$;
 
 grant usage on schema public, auth to authenticated, anon, service_role;
