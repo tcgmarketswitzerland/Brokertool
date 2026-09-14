@@ -9,7 +9,7 @@ const NOTE = '33333333-3333-4333-8333-333333333333';
 const base: SessionState = {
   topics: {
     [TOPIC]: {
-      topicId: TOPIC, isRequired: true, displayOrder: 10,
+      topicId: TOPIC, icon: 'sofa', isRequired: true, displayOrder: 10,
       progressStatus: 'NOT_STARTED', outcome: null, coverageState: 'UNKNOWN', priority: null,
     },
   },

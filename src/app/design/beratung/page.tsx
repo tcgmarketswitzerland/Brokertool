@@ -13,30 +13,30 @@ export const metadata: Metadata = { title: 'Beratungsmodus — Vorschau' };
  * auftauchen.
  */
 
-const TOPICS: ReadonlyArray<[string, string, boolean, SessionState['topics'][string]['progressStatus'],
-  SessionState['topics'][string]['outcome'], SessionState['topics'][string]['coverageState']]> = [
-  ['a1', 'Hausrat',                 true,  'DISCUSSED',   'OFFER_REQUESTED',    'COVER_EXISTS'],
-  ['a2', 'Privathaftpflicht',       true,  'DISCUSSED',   'NO_ACTION_NEEDED',   'COVER_EXISTS'],
-  ['a3', 'Gebäude',                 false, 'SKIPPED',     null,                 'UNKNOWN'],
-  ['a4', 'Motorfahrzeuge',          false, 'DISCUSSED',   'ACTION_REQUIRED',    'COVER_EXISTS'],
-  ['a5', 'Rechtsschutz',            false, 'DISCUSSED',   'FOLLOW_UP',          'NO_COVER'],
-  ['a6', 'Reise',                   false, 'DISCUSSED',   'NO_ACTION_NEEDED',   'COVER_EXISTS'],
-  ['a7', 'Cyber',                   false, 'IN_PROGRESS', null,                 'NO_COVER'],
-  ['a8', 'Haustiere',               false, 'NOT_STARTED', null,                 'UNKNOWN'],
-  ['a9', 'Krankenkasse',            true,  'DISCUSSED',   'NO_ACTION_NEEDED',   'COVER_EXISTS'],
-  ['b1', 'Unfall',                  false, 'DISCUSSED',   'NO_ACTION_NEEDED',   'COVER_EXISTS'],
-  ['b2', 'Erwerbsunfähigkeit',      true,  'DISCUSSED',   'CLIENT_DECLINED',    'NO_COVER'],
-  ['b3', 'Todesfall',               false, 'NOT_STARTED', null,                 'UNKNOWN'],
-  ['b4', 'Vorsorge und Pensionierung', true, 'IN_PROGRESS', null,               'UNKNOWN'],
-  ['b5', 'Säule 3a',                false, 'NOT_STARTED', null,                 'UNKNOWN'],
-  ['b6', 'Hypothek und Wohneigentum', false, 'NOT_STARTED', null,               'UNKNOWN'],
+type Row = [string, string, string, boolean,
+  SessionState['topics'][string]['progressStatus'],
+  SessionState['topics'][string]['outcome'],
+  SessionState['topics'][string]['coverageState']];
+
+const TOPICS: ReadonlyArray<Row> = [
+  ['a1', 'Hausratversicherung',       'sofa',        true,  'DISCUSSED',   'OFFER_REQUESTED',  'COVER_EXISTS'],
+  ['a2', 'Privathaftpflicht',         'shield',      true,  'DISCUSSED',   'NO_ACTION_NEEDED', 'COVER_EXISTS'],
+  ['a3', 'Gebäude',                   'building',    false, 'SKIPPED',     null,               'UNKNOWN'],
+  ['a4', 'Motorfahrzeugversicherung', 'car',         false, 'DISCUSSED',   'ACTION_REQUIRED',  'COVER_EXISTS'],
+  ['a5', 'Rechtsschutz',              'scale',       false, 'DISCUSSED',   'FOLLOW_UP',        'NO_COVER'],
+  ['a6', 'Reise',                     'plane',       false, 'DISCUSSED',   'NO_ACTION_NEEDED', 'COVER_EXISTS'],
+  ['a7', 'Cyber',                     'laptop',      false, 'IN_PROGRESS', null,               'NO_COVER'],
+  ['a8', 'Krankenkasse',              'heart-pulse', true,  'DISCUSSED',   'NO_ACTION_NEEDED', 'COVER_EXISTS'],
+  ['a9', 'Risiko',                    'umbrella',    true,  'DISCUSSED',   'CLIENT_DECLINED',  'NO_COVER'],
+  ['b1', 'Vorsorge',                  'piggy-bank',  true,  'IN_PROGRESS', null,               'UNKNOWN'],
+  ['b2', 'Hypothek',                  'key-round',   false, 'NOT_STARTED', null,               'UNKNOWN'],
 ];
 
 export default function AdvisorPreviewPage() {
   const state: SessionState = {
-    topics: Object.fromEntries(TOPICS.map(([id, , isRequired, progressStatus, outcome, coverageState], i) => [
+    topics: Object.fromEntries(TOPICS.map(([id, , icon, isRequired, progressStatus, outcome, coverageState], i) => [
       id,
-      { topicId: id, isRequired, displayOrder: (i + 1) * 10, progressStatus, outcome, coverageState, priority: null },
+      { topicId: id, icon, isRequired, displayOrder: (i + 1) * 10, progressStatus, outcome, coverageState, priority: null },
     ])),
     notes: {},
   };

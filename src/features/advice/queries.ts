@@ -8,6 +8,7 @@ export type SessionTopic = {
   slug: string;
   name: string;
   category: string;
+  icon: string | null;
   displayOrder: number;
   isRequired: boolean;
   progressStatus: ProgressStatus;
@@ -73,7 +74,7 @@ export async function getSession(sessionId: string): Promise<AdviceSession | nul
       advice_session_topics (
         id, topic_id, display_order, is_required, progress_status, outcome,
         coverage_state, priority,
-        insurance_topics ( slug, name, category )
+        insurance_topics ( slug, name, category, icon )
       ),
       notes ( id, session_topic_id, visibility, body )
     `)
@@ -92,6 +93,7 @@ export async function getSession(sessionId: string): Promise<AdviceSession | nul
         slug: String(catalog.slug ?? ''),
         name: nameOf(catalog.name),
         category: String(catalog.category ?? ''),
+        icon: catalog.icon == null ? null : String(catalog.icon),
         displayOrder: Number(t.display_order ?? 0),
         isRequired: Boolean(t.is_required),
         progressStatus: t.progress_status as ProgressStatus,

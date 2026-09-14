@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 import { EyeOff, Users } from 'lucide-react';
+import { TopicIcon } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { COVERAGE_LABEL, COVERAGE_STATES, OUTCOMES, OUTCOME_LABEL } from '@/domain/advice/status';
 import type { CommandPayload } from '@/domain/advice/commands';
@@ -80,7 +81,12 @@ export function TopicDetail({
   return (
     <div className="grid gap-7">
       <div className="grid gap-1">
-        <h2 className="text-2xl">{name}</h2>
+        <h2 className="flex items-center gap-2.5 text-2xl">
+          <span className="flex size-10 items-center justify-center rounded-lg bg-surface-sunken text-ink-muted">
+            <TopicIcon name={topic.icon} className="size-5" />
+          </span>
+          {name}
+        </h2>
         {topic.isRequired ? (
           <p className="text-[0.8125rem] text-ink-subtle">
             Pflichtthema — braucht ein Ergebnis, bevor die Beratung abgeschlossen werden kann.

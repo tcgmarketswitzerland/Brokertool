@@ -9,6 +9,8 @@ import type { CommandPayload } from './commands';
 
 export type TopicState = {
   readonly topicId: string;
+  /** Name des Symbols aus dem Katalog; die Zuordnung liegt in der Oberflaeche. */
+  readonly icon: string | null;
   readonly isRequired: boolean;
   readonly displayOrder: number;
   readonly progressStatus: ProgressStatus;

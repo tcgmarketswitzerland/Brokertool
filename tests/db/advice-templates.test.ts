@@ -32,26 +32,30 @@ beforeAll(async () => {
 afterAll(async () => { await client?.end(); });
 
 describe('Spartenkatalog', () => {
-  it('enthaelt die Privatkundensparten', async () => {
+  it('enthaelt genau die elf verbindlichen Sparten in der vorgegebenen Reihenfolge', async () => {
     const { rows } = await client.query(
       `select slug from insurance_topics where is_active order by display_order`);
-    const slugs = rows.map((r) => r.slug);
-    expect(slugs).toContain('hausrat');
-    expect(slugs).toContain('privathaftpflicht');
-    expect(slugs).toContain('erwerbsunfaehigkeit');
-    expect(slugs).toHaveLength(15);
+    expect(rows.map((r) => r.slug)).toEqual([
+      'hausrat', 'privathaftpflicht', 'gebaeude', 'motorfahrzeug', 'rechtsschutz',
+      'reise', 'cyber', 'krankenkasse', 'risiko', 'vorsorge', 'hypothek',
+    ]);
   });
 
-  it('beginnt mit dem Naheliegenden und endet bei Vorsorge und Finanzierung', async () => {
-    // Die Reihenfolge folgt dem Gespraechsverlauf: Themen, die viel
-    // Vertrauen voraussetzen, kommen zuletzt.
+  it('jede aktive Sparte hat ein Symbol', async () => {
+    // Ohne Symbol faellt eine Sparte in Liste und Rad aus dem Bild.
     const { rows } = await client.query(
-      `select slug from insurance_topics order by display_order limit 2`);
-    expect(rows.map((r) => r.slug)).toEqual(['hausrat', 'privathaftpflicht']);
+      `select slug from insurance_topics where is_active and (icon is null or icon = '')`);
+    expect(rows).toEqual([]);
+  });
 
-    const { rows: last } = await client.query(
-      `select slug from insurance_topics order by display_order desc limit 1`);
-    expect(last[0].slug).toBe('hypothek');
+  it('entfernte Sparten werden deaktiviert, nicht geloescht', async () => {
+    // An ihnen koennen bereits Beratungen haengen, die nachvollziehbar
+    // bleiben muessen.
+    const { rows } = await client.query(
+      `select slug, is_active from insurance_topics
+        where slug in ('unfall','todesfall','saeule3a','haustiere','erwerbsunfaehigkeit')`);
+    expect(rows).toHaveLength(5);
+    expect(rows.every((r) => r.is_active === false)).toBe(true);
   });
 
   it('hat fuer jede Sparte einen deutschen Namen', async () => {
@@ -62,8 +66,9 @@ describe('Spartenkatalog', () => {
 
   it('ist fuer Angemeldete lesbar, aber nicht beschreibbar', async () => {
     const lesbar = await asUser(client, { userId: USER, organizationId: orgA, role: 'OWNER' },
-      async () => (await client.query('select count(*)::int as n from insurance_topics')).rows[0].n);
-    expect(lesbar).toBe(15);
+      async () => (await client.query(
+        'select count(*)::int as n from insurance_topics where is_active')).rows[0].n);
+    expect(lesbar).toBe(11);
 
     const res = await asUser(client, { userId: USER, organizationId: orgA, role: 'OWNER' },
       () => client.query(`update insurance_topics set is_active = false`));
@@ -75,28 +80,38 @@ describe('Standardvorlage bei Firmengruendung', () => {
   it('jede Firma bekommt eine eigene veroeffentlichte Vorlage', async () => {
     for (const org of [orgA, orgB]) {
       const { rows } = await client.query(
-        `select v.id, v.status from advice_template_versions v
+        `select v.status from advice_template_versions v
            join advice_templates t on t.id = v.template_id
           where t.organization_id = $1 and t.is_default`, [org]);
-      expect(rows).toHaveLength(1);
-      expect(rows[0].status).toBe('PUBLISHED');
+      expect(rows.length).toBeGreaterThanOrEqual(1);
+      expect(rows.every((r) => r.status === 'PUBLISHED')).toBe(true);
     }
   });
 
-  it('die Vorlage enthaelt alle aktiven Privatkundensparten', async () => {
+  it('die juengste Vorlagenversion enthaelt alle aktiven Privatkundensparten', async () => {
     const { rows } = await client.query(
-      `select count(*)::int as n from advice_template_topics where organization_id = $1`, [orgA]);
-    expect(rows[0].n).toBe(15);
+      `select count(*)::int as n from advice_template_topics tt
+        where tt.template_version_id = (
+          select v.id from advice_template_versions v
+            join advice_templates t on t.id = v.template_id
+           where t.organization_id = $1 and t.is_default
+           order by v.version desc limit 1)`, [orgA]);
+    expect(rows[0].n).toBe(11);
   });
 
   it('markiert die Sparten, die jeden Haushalt betreffen, als Pflicht', async () => {
     const { rows } = await client.query(
       `select t.slug from advice_template_topics tt
          join insurance_topics t on t.id = tt.topic_id
-        where tt.organization_id = $1 and tt.is_required
+        where tt.is_required
+          and tt.template_version_id = (
+            select v.id from advice_template_versions v
+              join advice_templates t2 on t2.id = v.template_id
+             where t2.organization_id = $1 and t2.is_default
+             order by v.version desc limit 1)
         order by t.display_order`, [orgA]);
     expect(rows.map((r) => r.slug)).toEqual([
-      'hausrat', 'privathaftpflicht', 'krankenkasse', 'erwerbsunfaehigkeit', 'vorsorge',
+      'hausrat', 'privathaftpflicht', 'krankenkasse', 'risiko', 'vorsorge',
     ]);
   });
 
@@ -112,10 +127,10 @@ describe('Unveraenderlichkeit veroeffentlichter Vorlagen', () => {
     const { rows } = await client.query(
       `select v.id from advice_template_versions v
          join advice_templates t on t.id = v.template_id
-        where t.organization_id = $1`, [orgA]);
+        where t.organization_id = $1 order by v.version desc limit 1`, [orgA]);
 
     await expect(
-      client.query(`update advice_template_versions set version = 2 where id = $1`, [rows[0].id]),
+      client.query(`update advice_template_versions set version = 99 where id = $1`, [rows[0].id]),
     ).rejects.toThrow(/unveraenderlich/);
   });
 
@@ -138,7 +153,7 @@ describe('Unveraenderlichkeit veroeffentlichter Vorlagen', () => {
     const { rows } = await client.query(
       `select v.id from advice_template_versions v
          join advice_templates t on t.id = v.template_id
-        where t.organization_id = $1`, [orgB]);
+        where t.organization_id = $1 order by v.version desc limit 1`, [orgB]);
 
     await expect(
       client.query(`update advice_template_versions set status = 'ARCHIVED' where id = $1`, [rows[0].id]),

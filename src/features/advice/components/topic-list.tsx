@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, ChevronRight, CircleDashed, CircleDot, Clock, Minus, Slash, TriangleAlert } from 'lucide-react';
+import { TopicIcon } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { DISPLAY_STATE_META, toDisplayState } from '@/domain/advice/topic-status';
 import type { TopicState } from '@/domain/advice/session-state';
@@ -46,11 +47,18 @@ export function TopicList({
                   : 'border-line bg-surface hover:bg-surface-hover',
               )}
             >
+              {/* Links das Sparten-Symbol, damit der Berater die Zeile am Bild
+                  erkennt; rechts davon der Status als Farbe UND Zeichen. */}
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-sunken text-ink-muted">
+                <TopicIcon name={topic.icon} className="size-[18px]" />
+              </span>
+
               <span
-                className="flex size-7 shrink-0 items-center justify-center rounded-full"
+                className="flex size-6 shrink-0 items-center justify-center rounded-full"
                 style={{ backgroundColor: meta.color, color: 'var(--color-surface)' }}
+                title={meta.label}
               >
-                <Icon aria-hidden className="size-4" strokeWidth={2.5} />
+                <Icon aria-hidden className="size-3.5" strokeWidth={2.5} />
               </span>
 
               <span className="min-w-0 flex-1">

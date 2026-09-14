@@ -55,7 +55,7 @@ describe('Beratung starten', () => {
 
     const { rows } = await client.query(
       `select count(*)::int as n from advice_session_topics where session_id = $1`, [sessionId]);
-    expect(rows[0].n).toBe(15);
+    expect(rows[0].n).toBe(11);
   });
 
   it('uebernimmt Reihenfolge und Pflichtkennzeichen aus der Vorlage', async () => {

@@ -23,6 +23,7 @@ export default async function AdvisorPage({
   const initialState: SessionState = {
     topics: Object.fromEntries(session.topics.map((t) => [t.topicId, {
       topicId: t.topicId,
+      icon: t.icon,
       isRequired: t.isRequired,
       displayOrder: t.displayOrder,
       progressStatus: t.progressStatus,
