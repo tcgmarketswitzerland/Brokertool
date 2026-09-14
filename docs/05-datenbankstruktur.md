@@ -1112,3 +1112,31 @@ Das ist der Grund, DDL vor der Umsetzung einmal laufen zu lassen: Alle drei Fehl
 Phase 6 unter Zeitdruck gefunden werden müssen, und Fehler 2 wäre erst beim ersten Korrekturversuch
 an einer abgeschlossenen Beratung aufgefallen — also genau dann, wenn die Nachvollziehbarkeit
 gebraucht wird.
+
+
+---
+
+## 18. Migrationskonvention
+
+Jede Migration, die Mandantentabellen anlegt oder verändert, endet mit:
+
+```sql
+select public.apply_tenant_rls();
+select public.assert_rls_complete();
+```
+
+`assert_rls_complete()` wirft, wenn eine der vier Zusicherungen verletzt ist:
+
+1. eine Tabelle ohne `ROW LEVEL SECURITY` **und** `FORCE ROW LEVEL SECURITY`
+2. eine Tabelle mit RLS, aber ohne jede Policy — sie wäre sonst für alle gesperrt, und das fällt
+   erst im Betrieb auf
+3. eine nullable `organization_id` — eine solche Zeile gehörte zu niemandem
+4. eine Update- oder Delete-Policy auf einer anfügenden Tabelle — genau das, was der Generator dem
+   Audit-Log stillschweigend gegeben hatte
+
+Die Prüfung läuft damit **in der Migration**, nicht als Schritt daneben. Das hat zwei Vorteile: Der
+Migrationsworkflow braucht keine Datenbank-URL als Zugangsdatum, und die Absicherung lässt sich
+nicht übergehen, indem jemand eine Migration von Hand einspielt.
+
+Nachgewiesen: Drei absichtlich eingebaute Verstösse (Mandantentabelle ohne Policy, nullable
+`organization_id`, Schreibpolicy auf `audit_logs`) werden alle erkannt und brechen die Migration ab.
