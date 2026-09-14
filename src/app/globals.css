@@ -1,46 +1,263 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
 
-/*
- * Design-Tokens (Architektur 4.6).
- * Die Statusfarben werden von Rad, Liste, Badges UND dem PDF gemeinsam
- * genutzt, damit das gedruckte Protokoll dieselbe Sprache spricht wie der
- * Bildschirm.
- */
-@theme {
-  --color-surface: oklch(99% 0.002 250);
-  --color-surface-raised: oklch(100% 0 0);
-  --color-ink: oklch(25% 0.02 250);
-  --color-ink-muted: oklch(52% 0.02 250);
-  --color-line: oklch(92% 0.004 250);
-  --color-brand: oklch(52% 0.13 250);
-  --color-brand-soft: oklch(96% 0.02 250);
+/* ===========================================================================
+   Designsystem Brokertool
+   ---------------------------------------------------------------------------
+   Leitlinie: Der Berater sitzt mit dem Kunden vor dem Geraet. Die Oberflaeche
+   muss praesentabel sein, ohne dekorativ zu wirken - ein Werkzeug, das
+   Kompetenz ausstrahlt, keine Marketingseite.
 
-  /* Beratungsstatus - immer zusammen mit einem Symbol verwenden,
-     nie Farbe allein (Architektur 4.3). */
-  --color-status-not-started: oklch(85% 0.01 250);
-  --color-status-in-progress: oklch(70% 0.12 250);
-  --color-status-no-action: oklch(65% 0.13 155);
-  --color-status-action: oklch(72% 0.15 65);
-  --color-status-declined: oklch(60% 0.02 250);
-  --color-status-follow-up: oklch(70% 0.12 300);
+   Bewusste Entscheidungen, die das Erscheinungsbild praegen:
+   - Kanten statt Schatten. Schatten nur dort, wo etwas wirklich ueber der
+     Seite schwebt (Menues, Dialoge). Flaechige Schattenwolken sind das
+     haeufigste Merkmal generischer Oberflaechen.
+   - Keine Farbverlaeufe als Dekoration.
+   - Eine Akzentfarbe, sparsam eingesetzt. Farbe bedeutet hier etwas -
+     ein Status, eine Aktion - und ist nie Schmuck.
+   - Tabellenziffern fuer alle Betraege. Praemien in einer Spalte muessen
+     untereinander fluchten.
+   - Symbole aus einem Icon-Satz, nie Emoji.
+   =========================================================================== */
 
-  /* Mindesthoehe fuer Bedienelemente im Beratungsmodus (iPad im Gespraech). */
-  --spacing-touch: 3rem;
+:root {
+  /* --- Flaechen ------------------------------------------------------- */
+  --bg:              oklch(98.8% 0.003 255);
+  --surface:         oklch(100% 0 0);
+  --surface-sunken:  oklch(96.8% 0.004 255);
+  --surface-hover:   oklch(97.2% 0.005 255);
+
+  /* --- Text ----------------------------------------------------------- */
+  --ink:             oklch(23% 0.016 258);
+  --ink-muted:       oklch(50% 0.014 258);
+  --ink-subtle:      oklch(63% 0.011 258);
+  --ink-inverted:    oklch(99% 0 0);
+
+  /* --- Linien --------------------------------------------------------- */
+  --line:            oklch(91.5% 0.005 258);
+  --line-strong:     oklch(85% 0.008 258);
+
+  /* --- Akzent: ein tiefes Tintenblau, nicht das uebliche Signalblau ---- */
+  --accent:          oklch(47% 0.116 250);
+  --accent-hover:    oklch(42% 0.118 250);
+  --accent-soft:     oklch(95.5% 0.021 250);
+  --accent-border:   oklch(87% 0.045 250);
+  --accent-ink:      oklch(38% 0.11 250);
+
+  /* --- Rueckmeldungen ------------------------------------------------- */
+  --danger:          oklch(50% 0.152 25);
+  --danger-soft:     oklch(96% 0.022 27);
+  --danger-border:   oklch(88% 0.06 27);
+  --success:         oklch(48% 0.115 158);
+  --success-soft:    oklch(95.5% 0.032 158);
+  --warning:         oklch(58% 0.135 68);
+  --warning-soft:    oklch(96% 0.04 75);
+
+  /* --- Beratungsstatus -----------------------------------------------
+     Immer zusammen mit einem Symbol verwenden. Rot/Gruen allein ist fuer
+     einen relevanten Teil der Nutzer nicht unterscheidbar - und das Rad
+     wird dem Kunden gezeigt.                                              */
+  --status-not-started: oklch(80% 0.008 258);
+  --status-progress:    oklch(60% 0.115 250);
+  --status-no-action:   oklch(55% 0.115 158);
+  --status-action:      oklch(62% 0.145 62);
+  --status-declined:    oklch(56% 0.028 300);
+  --status-follow-up:   oklch(56% 0.115 305);
+
+  --focus-ring:      oklch(55% 0.14 250);
+
+  /* --- Form ----------------------------------------------------------- */
+  --radius-sm: 0.25rem;
+  --radius:    0.375rem;
+  --radius-lg: 0.625rem;
+
+  /* Schatten nur fuer echte Ebenen ueber der Seite. */
+  --shadow-pop: 0 1px 2px oklch(23% 0.016 258 / 0.06),
+                0 8px 24px -6px oklch(23% 0.016 258 / 0.14);
+
+  color-scheme: light;
 }
 
-:root { color-scheme: light; }
+/* Systemeinstellung dunkel, sofern der Nutzer nicht ausdruecklich hell waehlt */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:              oklch(15.5% 0.014 262);
+    --surface:         oklch(20.5% 0.016 262);
+    --surface-sunken:  oklch(18% 0.014 262);
+    --surface-hover:   oklch(25% 0.018 262);
+
+    --ink:             oklch(95.5% 0.004 258);
+    --ink-muted:       oklch(72% 0.012 258);
+    --ink-subtle:      oklch(58% 0.012 258);
+    --ink-inverted:    oklch(15.5% 0.014 262);
+
+    --line:            oklch(30% 0.016 262);
+    --line-strong:     oklch(39% 0.018 262);
+
+    --accent:          oklch(72% 0.112 250);
+    --accent-hover:    oklch(78% 0.108 250);
+    --accent-soft:     oklch(27% 0.045 252);
+    --accent-border:   oklch(38% 0.07 252);
+    --accent-ink:      oklch(82% 0.09 250);
+
+    --danger:          oklch(70% 0.138 24);
+    --danger-soft:     oklch(27% 0.055 25);
+    --danger-border:   oklch(38% 0.09 25);
+    --success:         oklch(70% 0.115 158);
+    --success-soft:    oklch(25% 0.045 158);
+    --warning:         oklch(79% 0.115 76);
+    --warning-soft:    oklch(25% 0.042 76);
+
+    --status-not-started: oklch(38% 0.012 260);
+    --status-progress:    oklch(68% 0.115 250);
+    --status-no-action:   oklch(70% 0.115 158);
+    --status-action:      oklch(76% 0.13 68);
+    --status-declined:    oklch(56% 0.028 300);
+    --status-follow-up:   oklch(70% 0.115 305);
+
+    --focus-ring:      oklch(72% 0.12 250);
+
+    --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.3),
+                  0 8px 24px -6px oklch(0% 0 0 / 0.5);
+
+    color-scheme: dark;
+  }
+}
+
+/* Ausdrueckliche Wahl des Nutzers gewinnt in beide Richtungen */
+:root[data-theme="dark"] {
+  --bg:              oklch(15.5% 0.014 262);
+  --surface:         oklch(20.5% 0.016 262);
+  --surface-sunken:  oklch(18% 0.014 262);
+  --surface-hover:   oklch(25% 0.018 262);
+  --ink:             oklch(95.5% 0.004 258);
+  --ink-muted:       oklch(72% 0.012 258);
+  --ink-subtle:      oklch(58% 0.012 258);
+  --ink-inverted:    oklch(15.5% 0.014 262);
+  --line:            oklch(30% 0.016 262);
+  --line-strong:     oklch(39% 0.018 262);
+  --accent:          oklch(72% 0.112 250);
+  --accent-hover:    oklch(78% 0.108 250);
+  --accent-soft:     oklch(27% 0.045 252);
+  --accent-border:   oklch(38% 0.07 252);
+  --accent-ink:      oklch(82% 0.09 250);
+  --danger:          oklch(70% 0.138 24);
+  --danger-soft:     oklch(27% 0.055 25);
+  --danger-border:   oklch(38% 0.09 25);
+  --success:         oklch(70% 0.115 158);
+  --success-soft:    oklch(25% 0.045 158);
+  --warning:         oklch(79% 0.115 76);
+  --warning-soft:    oklch(25% 0.042 76);
+  --status-not-started: oklch(38% 0.012 260);
+  --status-progress:    oklch(68% 0.115 250);
+  --status-no-action:   oklch(70% 0.115 158);
+  --status-action:      oklch(76% 0.13 68);
+  --status-declined:    oklch(56% 0.028 300);
+  --status-follow-up:   oklch(70% 0.115 305);
+  --focus-ring:      oklch(72% 0.12 250);
+  --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.3),
+                0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg:             var(--bg);
+  --color-surface:        var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover:  var(--surface-hover);
+  --color-ink:            var(--ink);
+  --color-ink-muted:      var(--ink-muted);
+  --color-ink-subtle:     var(--ink-subtle);
+  --color-ink-inverted:   var(--ink-inverted);
+  --color-line:           var(--line);
+  --color-line-strong:    var(--line-strong);
+  --color-accent:         var(--accent);
+  --color-accent-hover:   var(--accent-hover);
+  --color-accent-soft:    var(--accent-soft);
+  --color-accent-border:  var(--accent-border);
+  --color-accent-ink:     var(--accent-ink);
+  --color-danger:         var(--danger);
+  --color-danger-soft:    var(--danger-soft);
+  --color-danger-border:  var(--danger-border);
+  --color-success:        var(--success);
+  --color-success-soft:   var(--success-soft);
+  --color-warning:        var(--warning);
+  --color-warning-soft:   var(--warning-soft);
+
+  --color-status-not-started: var(--status-not-started);
+  --color-status-progress:    var(--status-progress);
+  --color-status-no-action:   var(--status-no-action);
+  --color-status-action:      var(--status-action);
+  --color-status-declined:    var(--status-declined);
+  --color-status-follow-up:   var(--status-follow-up);
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-pop: var(--shadow-pop);
+}
+
+/* --- Grundlagen --------------------------------------------------------- */
+
+*, *::before, *::after { border-color: var(--line); }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Verhindert, dass iPadOS beim Fokussieren eines Feldes hineinzoomt */
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
-  background: var(--color-surface);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv05' 1, 'ss03' 1;   /* offeneres l, geschwungenes g */
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Dichte-Stufe fuer den Beratungsmodus: einmal zentral, nicht als
-   punktuelle Klassen-Overrides in Komponenten. */
-[data-density="advisor"] button,
-[data-density="advisor"] [role="button"],
-[data-density="advisor"] input,
-[data-density="advisor"] select {
-  min-height: var(--spacing-touch);
+/* Ueberschriften: enger gesetzt, damit grosse Groessen nicht auseinanderfallen */
+h1, h2, h3 { letter-spacing: -0.021em; font-weight: 600; text-wrap: balance; }
+h1 { letter-spacing: -0.028em; }
+p  { text-wrap: pretty; }
+
+/* Betraege und Zahlen fluchten untereinander */
+.tabular, table td, table th, [data-numeric] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv05' 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
+/* --- Beratungsmodus ------------------------------------------------------
+   Eine eigene Dichtestufe, einmal zentral gesetzt. Die Standardgroessen von
+   Bedienelementen sind fuer die Maus gemacht; auf dem iPad im Gespraech
+   braucht es groessere Flaechen und Schrift.                               */
+[data-density="advisor"] {
+  --control-height: 3rem;
   font-size: 1.0625rem;
+}
+[data-density="advisor"] button:not([data-compact]),
+[data-density="advisor"] [role="button"]:not([data-compact]),
+[data-density="advisor"] input,
+[data-density="advisor"] select,
+[data-density="advisor"] textarea {
+  min-height: var(--control-height);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
