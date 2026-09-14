@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import {
-  Alert, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Alert, Badge, Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui';
+import { StartSessionButton } from '@/features/advice/start-session-button';
 import { CUSTOMER_TYPE_LABEL } from '@/domain/customer/types';
 import { getCustomer } from '@/features/customers/queries';
 import { CustomerSettingsForm } from '@/features/customers/customer-settings-form';
@@ -45,9 +46,7 @@ export default async function CustomerPage({
             <h1 className="text-2xl">{customer.displayName}</h1>
             <Badge>{CUSTOMER_TYPE_LABEL[customer.customerType]}</Badge>
           </div>
-          <Button disabled>
-            <FileText aria-hidden />Neue Beratung
-          </Button>
+          <StartSessionButton customerId={customer.id} />
         </div>
       </div>
 

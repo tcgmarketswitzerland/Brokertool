@@ -48,6 +48,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      start_advice_session: {
+        Args: { p_customer_id: string; p_title?: string | null };
+        Returns: string;
+      };
     };
     Enums: {
       org_role: 'OWNER' | 'ADMIN' | 'ADVISOR' | 'BACKOFFICE';
