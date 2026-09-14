@@ -50,6 +50,19 @@ Ohne diese drei Punkte kann ich nicht weiterentwickeln. Aufwand insgesamt etwa *
 
 ---
 
+## A4 · Access-Token-Hook aktivieren — sonst sehen Sie nichts
+
+Die Migration legt den Hook an, aktiviert ihn aber nicht. Ohne diesen Schritt können Sie sich
+registrieren und anmelden, sehen danach aber **keine Daten** — weil `auth_org_id()` NULL liefert
+und alle Sicherheitsregeln korrekt dichtmachen. Das sieht aus wie ein Fehler, ist aber die
+Absicherung bei der Arbeit.
+
+- [ ] Supabase → **Authentication → Hooks → Customize Access Token (JWT) Claims**
+- [ ] Funktion `public.custom_access_token_hook` auswählen und aktivieren
+- [ ] Danach einmal ab- und wieder anmelden, damit ein neues Token ausgestellt wird
+
+---
+
 ## B — Blockiert den ersten zahlenden Kunden
 
 Kein Entwicklungsaufwand, aber ohne diese Punkte kannst du nicht verkaufen. **Jetzt anfangen**,
