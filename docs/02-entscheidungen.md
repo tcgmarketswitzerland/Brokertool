@@ -175,6 +175,54 @@ mit der Kamera.
   wird er durch ein natives Bedürfnis, nicht durch den Wunsch nach einem Symbol im Store.
 
 
+## ADR-008 — Abschluss ab einer besprochenen Sparte (ersetzt die Pflichtsparten-Regel)
+**Datum:** 2026-09-17 · **Status:** entschieden
+
+**Entscheidung:** Eine Beratung ist abschliessbar, sobald **eine** Sparte ein Ergebnis hat. Alle
+übrigen werden beim Abschluss ausdrücklich als *„im Gespräch nicht thematisiert"* festgehalten —
+in der Datenbank und im Protokoll.
+
+**Begründung:** Die vorherige Regel (jede Sparte braucht ein Ergebnis, ADR zu Migration 0018) kam
+aus dem Versprechen „kein Bereich wird vergessen". Der erste echte Test hat gezeigt, dass sie am
+Gespräch vorbeigeht: Ein Kunde kommt wegen der Motorfahrzeugversicherung und hat vierzig Minuten.
+Eine Sperre, die ihn zwingt, elf Sparten durchzuklicken, führt zu einem von zwei Ergebnissen —
+entweder wird durchgeklickt, ohne dass gesprochen wurde (dann ist die Dokumentation eine Lüge),
+oder die Beratung wird nie abgeschlossen (dann gibt es gar keine Dokumentation). Beides ist
+schlechter als die neue Regel.
+
+**Das Versprechen bleibt, nur anders eingelöst.** Nicht durch eine Sperre, sondern dadurch, dass
+zu jeder Sparte ein Satz im Protokoll steht. Eine Lücke muss man später erklären, einen
+dokumentierten Satz nicht.
+
+**Konsequenz:**
+- `complete_advice_session` setzt unberührte Sparten auf `SKIPPED` (Migration 0022).
+- Die Vorschau vor dem Abschluss nennt diese Sparten beim Namen — der Berater sieht, was er
+  festhält, und kann zurückspringen.
+- `is_required` bleibt im Datenmodell und steuert, was die Oberfläche hervorhebt. Es sperrt nicht
+  mehr.
+- Die Kennzahl „Pflicht offen" verliert ihre Bedeutung und verschwindet aus der Zusammenfassung.
+
+
+## ADR-009 — Entscheidungen in der Sprache des Brokers
+**Datum:** 2026-09-17 · **Status:** entschieden
+
+**Entscheidung:** Die Ergebnisse einer Sparte heissen: *Offerte unterzeichnen*, *Offerte
+bestellen*, *Anpassung gewünscht*, *Kein Handlungsbedarf seitens Broker*, *Kein Handlungsbedarf
+seitens Kunden*. `FOLLOW_UP` bleibt im Datenmodell für bestehende Beratungen, wird aber nicht mehr
+angeboten.
+
+**Begründung:** Die vorherigen Bezeichnungen waren aus dem Datenmodell heraus benannt
+(„Handlungsbedarf", „Kunde lehnt ab"). Die neuen sind die Worte, die im Gespräch fallen.
+
+Die wichtigste Änderung ist die Aufspaltung von „kein Handlungsbedarf": Sagt der **Broker**, dass
+nichts zu tun ist, ist das ein fachliches Urteil. Sagt der **Kunde** es gegen den Rat, ist es eine
+Entscheidung, die im Streitfall belegen muss, worüber aufgeklärt wurde. Das sind zwei verschiedene
+Sachverhalte, und nur der zweite löst die Pflichtbegründung aus.
+
+**Konsequenz:** Enum-Werte bleiben unverändert — ein Enum-Wert weniger hiesse, bestehende
+Dokumentation unlesbar zu machen. Geändert haben sich nur die Beschriftungen und die Auswahlliste.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |
