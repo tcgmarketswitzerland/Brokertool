@@ -147,6 +147,20 @@ Für die Datenschutzerklärung: Supabase (Datenbank, Zürich), Vercel (Anwendung
 
 ---
 
+## C4 · Einmal im Jahr: Prämiendaten auffrischen
+
+Das BAG genehmigt die Prämien Ende September für das Folgejahr. Dann brauche ich drei Dateien
+von dir, und ein Befehl erzeugt daraus alles Nötige:
+
+- [ ] `Praemien_CH.csv` aus `Archiv_Praemien_<Jahr>.zip` (opendata.swiss)
+- [ ] `praemienregionen.xlsx` (priminfo.admin.ch)
+- [ ] `zugelassene-krankenversicherer-<Jahr>.xlsx` (BAG)
+
+Danach: `node scripts/bag-daten.mjs <ordner>` — der Rest passiert von selbst. Das Protokoll hält
+fest, mit welchem Prämienjahr gerechnet wurde.
+
+---
+
 ## D — Was ich als Nächstes baue
 
 Dazu brauche ich nichts von dir, es steht hier nur, damit du es weisst:
