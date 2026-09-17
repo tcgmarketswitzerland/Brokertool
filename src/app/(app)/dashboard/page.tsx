@@ -1,29 +1,27 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CalendarClock, CheckSquare, FileText, Plus, Users } from 'lucide-react';
+import {
+  CalendarClock, CalendarPlus, CheckSquare, FileText, Plus, Users,
+} from 'lucide-react';
 import { Button, Card, CardContent } from '@/components/ui';
 import { countCustomers } from '@/features/customers/queries';
 import { listSessions } from '@/features/advice/queries';
 import { listUpcomingCancellations } from '@/features/policies/queries';
+import { countOpenTasks } from '@/features/tasks/queries';
 
 export const metadata: Metadata = { title: 'Übersicht' };
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const [customers, sessions, upcoming] = await Promise.all([
-    countCustomers(), listSessions(), listUpcomingCancellations(),
+  const [customers, sessions, upcoming, openTasks] = await Promise.all([
+    countCustomers(), listSessions(), listUpcomingCancellations(), countOpenTasks(),
   ]);
   const open = sessions.filter((s) => s.status === 'IN_PROGRESS' || s.status === 'DRAFT').length;
 
-  // Die übrigen Kennzahlen entstehen in Phase 8: sie aggregieren Daten, die
-  // es vor Phase 5 noch gar nicht gibt. Ein erfundener Wert wäre schlimmer
-  // als ein ehrlicher Strich.
   const tiles = [
     { label: 'Kunden', value: String(customers), Icon: Users },
     { label: 'Offene Beratungen', value: String(open), Icon: FileText },
-    // Aufgaben entstehen in Phase 5. Ein erfundener Wert waere schlimmer als
-    // ein ehrlicher Strich.
-    { label: 'Offene Aufgaben', value: '—', Icon: CheckSquare },
+    { label: 'Offene Aufgaben', value: String(openTasks), Icon: CheckSquare },
     { label: 'Bald kündbar', value: String(upcoming.length), Icon: CalendarClock },
   ] as const;
 
@@ -34,9 +32,18 @@ export default async function DashboardPage() {
           <h1 className="text-2xl">Übersicht</h1>
           <p className="text-sm text-ink-muted">Ihr Tag auf einen Blick.</p>
         </div>
-        <Button asChild>
-          <Link href="/kunden/neu"><Plus aria-hidden />Neuer Kunde</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {/* Die haeufigste Handlung des Tages steht vorne und nicht hinter
+              der Kundenliste. */}
+          <Button asChild size="lg">
+            <Link href="/beratung-ansetzen">
+              <CalendarPlus aria-hidden />Neue Beratung ansetzen
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="lg">
+            <Link href="/kunden/neu"><Plus aria-hidden />Neuer Kunde</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

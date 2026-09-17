@@ -68,6 +68,22 @@ export const addressSchema = z.object({
   country: trimmed(2).default('CH'),
 });
 
+/**
+ * Vollstaendige Erfassung in einem Formular.
+ *
+ * Die Schnellanlage bleibt fuer den Fall "Name reicht". Wer aber eine
+ * Beratung ansetzt, hat die Angaben ohnehin vor sich - und muss sie dann
+ * nicht ueber drei Formulare verteilt nachtragen. Die Rueckmeldung aus dem
+ * ersten Test war eindeutig: erst Name, dann Person, dann Adresse fuehlt
+ * sich an wie Arbeit, die das Werkzeug erfinden.
+ */
+export const fullCustomerSchema = z.object({
+  customerType: z.enum(CUSTOMER_TYPES).default('PRIVATE'),
+  correspondenceLanguage: z.enum(LANGUAGES).default('de'),
+  person: personSchema,
+  address: addressSchema,
+});
+
 export type CustomerActionState =
   | { status: 'idle' }
   | { status: 'ok'; message: string }
