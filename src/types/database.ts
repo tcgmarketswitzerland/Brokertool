@@ -55,6 +55,10 @@ export type Database = {
         Args: { p_customer_id: string; p_title?: string | null };
         Returns: string;
       };
+      session_bootstrap: {
+        Args: Record<string, never>;
+        Returns: { has_membership: boolean; claim_org: string | null };
+      };
       complete_advice_session: {
         Args: { p_session_id: string; p_document: Json };
         Returns: string;

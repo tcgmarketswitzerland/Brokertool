@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Logo } from '@/components/ui';
 import { signOut } from '@/features/auth/actions';
+import { sessionState } from '@/features/auth/bootstrap';
 
 // Alles hinter der Anmeldung ist strikt dynamisch. Tenant-Daten duerfen nie
 // in den Full Route Cache geraten (Architektur 4.1).
@@ -23,6 +24,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect('/anmelden');
+
+  // Ohne Firma oder ohne Mandantenkennung im Token zeigt jede Seite
+  // dahinter eine leere Anwendung. Das sieht nach einem Fehler aus,
+  // obwohl die Sicherheitsregeln richtig arbeiten - also hier abfangen
+  // und benennen, statt den Nutzer suchen zu lassen.
+  const state = await sessionState();
+  if (state.kind !== 'ready') redirect('/einrichten');
 
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr]">

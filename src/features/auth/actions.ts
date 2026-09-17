@@ -79,8 +79,9 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     };
   }
 
-  // Ohne Sitzung wartet die Bestaetigungsmail - die Organisation entsteht
-  // dann beim ersten Anmelden.
+  // Ohne Sitzung wartet die Bestaetigungsmail. Die Firma entsteht dann
+  // unter /einrichten, wohin die Weiche im Anwendungsbereich fuehrt -
+  // hier ist noch kein Token da, mit dem sich etwas anlegen liesse.
   if (!data.session) {
     redirect(`/registrieren/bestaetigen?email=${encodeURIComponent(parsed.data.email)}`);
   }
@@ -94,6 +95,11 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     logger.error('organization_create_failed', { reason: safeId(orgError.code ?? 'unknown') });
     return { status: 'error', message: 'Konto angelegt, aber die Firma konnte nicht erstellt werden.' };
   }
+
+  // Das Token wurde vor der Mitgliedschaft ausgestellt und traegt die
+  // Mandantenkennung noch nicht. Ohne Erneuerung saehe der frisch
+  // registrierte Nutzer eine leere Anwendung.
+  await supabase.auth.refreshSession();
 
   revalidatePath('/', 'layout');
   redirect('/dashboard');

@@ -30,14 +30,14 @@ Beratung führen → abschliessen → Folgeaufgaben bestätigen → unterschreib
 
 ## A — Jetzt: zwei Schritte, dann kannst du testen
 
-### A1 · Die drei neuen Migrationen einspielen  ⚠️ blockiert alles Neue
+### A1 · Die neuen Migrationen einspielen  ⚠️ blockiert alles Neue
 
 Produktiv laufen die Migrationen 0001 bis 0017. Alles aus Phase 5 bis 7 — Aufgaben, Abschluss,
-Snapshot, Unterschrift — braucht 0018 bis 0020. **Ohne diesen Schritt siehst du die neuen Seiten,
+Snapshot, Unterschrift — braucht 0018 bis 0021. **Ohne diesen Schritt siehst du die neuen Seiten,
 aber jede Aktion darauf scheitert.**
 
 - [ ] Supabase → **SQL Editor** → neue Abfrage
-- [ ] Inhalt von `supabase/bundles/0018-0020.sql` einfügen und ausführen
+- [ ] Inhalt von `supabase/bundles/0018-0021.sql` einfügen und ausführen
 
 Die Datei lässt sich **gefahrlos mehrfach ausführen** — jeder Schritt prüft, ob er schon getan
 ist. Der abgebrochene Versuch vom ersten Mal ist damit kein Problem.
@@ -49,6 +49,7 @@ Was dabei passiert:
 | 0018 | Alle elf Sparten werden Pflicht (neue Vorlagenversion je Firma) |
 | 0019 | Tabelle `tasks` für Aufgaben von Kunde und Berater |
 | 0020 | Snapshot, Unterschrift, Schreibschutz für abgeschlossene Beratungen |
+| 0021 | Weiche nach der Anmeldung: erkennt fehlende Firma und veraltetes Token |
 
 Geprüft gegen eine Datenbank im Stand 0017, dreimal hintereinander eingespielt — ohne Fehler und
 ohne doppelte Vorlagenversionen.
@@ -63,17 +64,21 @@ ohne doppelte Vorlagenversionen.
 
 ### A2 · Access-Token-Hook prüfen
 
-Du hast ihn aktiviert. Falls du dich anmeldest und **keine Daten** siehst, ist er es trotzdem:
+Du hast ihn aktiviert. Die Anwendung sagt dir jetzt selbst, wenn etwas fehlt: statt einer leeren
+Oberfläche landest du auf `/einrichten` mit einer Erklärung. Falls dort steht, der Hook sei nicht
+aktiv:
 
 - [ ] Supabase → **Authentication → Hooks → Customize Access Token (JWT) Claims**
 - [ ] Funktion `public.custom_access_token_hook` muss ausgewählt **und aktiv** sein
-- [ ] Danach einmal ab- und wieder anmelden, damit ein neues Token ausgestellt wird
+- [ ] Danach auf „Sitzung erneuern" klicken
 
 ### A3 · Der erste vollständige Durchlauf
 
-Das ist der Test, auf den es ankommt — bitte **auf dem iPad**, nicht nur am Notebook:
+Erst am Laptop, danach dasselbe auf dem iPad — dort zählt vor allem das Unterschriftenfeld:
 
-- [ ] Firma einrichten, Kunden anlegen (Vor- und Nachname genügen)
+- [ ] Registrieren. Kommt eine Bestätigungsmail, bestätigen und anmelden — die Anwendung
+      fragt dann nach dem Firmennamen
+- [ ] Kunden anlegen (Vor- und Nachname genügen)
 - [ ] Einen bestehenden Vertrag erfassen — Versicherer und Prämie reichen
 - [ ] Beratung starten, durch alle elf Sparten gehen
 - [ ] Bei einer Sparte **„Kunde lehnt ab"** wählen — die Anwendung verlangt dann den Hinweis,
