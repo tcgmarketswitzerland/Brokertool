@@ -8,6 +8,7 @@ import { settleUntouched } from '@/domain/advice/completion';
 import { suggestTasks, type SuggestedTask } from '@/domain/task/suggestions';
 import { listPolicies } from '@/features/policies/queries';
 import { getSession, type AdviceSession } from '@/features/advice/queries';
+import { getPensionForSummary } from '@/features/pension/queries';
 
 export type CompletionData = {
   session: AdviceSession;
@@ -38,8 +39,9 @@ export async function getCompletionData(
   const session = await getSession(sessionId);
   if (!session) return null;
 
-  const [policies, orgName] = await Promise.all([
+  const [policies, orgName, pension] = await Promise.all([
     listPolicies(session.customerId), organizationName(),
+    getPensionForSummary(sessionId),
   ]);
 
   const sessionDate = (session.startedAt ?? new Date().toISOString()).slice(0, 10);
@@ -88,6 +90,7 @@ export async function getCompletionData(
       body: n.body,
     })),
     tasks,
+    pension,
   };
 
   return {

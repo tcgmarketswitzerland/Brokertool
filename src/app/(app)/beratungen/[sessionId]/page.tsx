@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Download, Mail, PenLine, ShieldCheck } from 'lucide-react';
+import {
+  ArrowLeft, Download, Mail, PenLine, PiggyBank, ShieldCheck,
+} from 'lucide-react';
 import {
   Alert, Badge, Button, Card, CardContent, CardHeader, CardTitle, TopicIcon,
 } from '@/components/ui';
@@ -204,6 +206,47 @@ export default async function SessionSummaryPage({
               })}
         </ul>
       </Card>
+
+      {document?.pension ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PiggyBank aria-hidden className="size-4 text-ink-subtle" />
+              Vorsorgeanalyse
+            </CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-line bg-surface-sunken text-left">
+                <tr>
+                  <th className="px-5 py-2.5 font-medium">Fall</th>
+                  <th className="px-5 py-2.5 text-right font-medium">Einkommen im Jahr</th>
+                  <th className="px-5 py-2.5 text-right font-medium">Lücke</th>
+                </tr>
+              </thead>
+              <tbody className="tabular divide-y divide-line">
+                {document.pension.cases.map((c) => (
+                  <tr key={c.pensionCase}>
+                    <td className="px-5 py-2.5">{c.label}</td>
+                    <td className="px-5 py-2.5 text-right">
+                      {formatCHF(rappen(c.totalCents))}
+                      {c.coveragePercent !== null ? (
+                        <span className="ml-1.5 text-ink-muted">{c.coveragePercent}%</span>
+                      ) : null}
+                    </td>
+                    <td className="px-5 py-2.5 text-right">
+                      {c.gapCents === null ? '—'
+                        : c.gapCents > 0
+                          ? <span className="text-danger">{formatCHF(rappen(c.gapCents))}</span>
+                          : <span className="text-success">gedeckt</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : null}
 
       {document ? (
         <Card>

@@ -34,6 +34,7 @@ const base: SummaryInput = {
     { ownerType: 'ADVISOR', title: 'Hausrat-Offerte erstellen', dueDate: '2026-09-22' },
     { ownerType: 'ADVISOR', title: 'Rechtsschutz vergleichen', dueDate: null },
   ],
+  pension: null,
 };
 
 describe('Protokolldokument', () => {

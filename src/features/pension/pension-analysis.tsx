@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Info, Users } from 'lucide-react';
 import { Alert, Card, CardHeader, CardTitle, Input, Select } from '@/components/ui';
 import { PensionChart } from '@/components/charts/pension-chart';
@@ -10,6 +10,7 @@ import {
   type Benefit, type Household, type PensionCase,
 } from '@/domain/pension/types';
 import { BENEFIT_ROWS } from './benefit-rows';
+import { savePensionAnalysis } from './actions';
 
 /**
  * Die Vorsorgeanalyse im Gespraech.
@@ -44,14 +45,28 @@ function Feld({ label, hint, children }: {
   );
 }
 
-export function PensionAnalysis() {
-  const [income, setIncome] = useState('');
-  const [target, setTarget] = useState('');
-  const [hasPartner, setHasPartner] = useState(false);
-  const [partnerIncome, setPartnerIncome] = useState('');
-  const [children, setChildren] = useState('0');
-  const [values, setValues] = useState<Record<string, string>>({});
+export type PensionInitial = {
+  income: string;
+  target: string;
+  hasPartner: boolean;
+  partnerIncome: string;
+  children: string;
+  values: Record<string, string>;
+};
+
+export function PensionAnalysis({ session, initial }: {
+  /** Fehlt sie, laeuft die Analyse als Vorschau ohne Speichern. */
+  session?: { sessionId: string; customerId: string } | undefined;
+  initial?: PensionInitial | undefined;
+}) {
+  const [income, setIncome] = useState(initial?.income ?? '');
+  const [target, setTarget] = useState(initial?.target ?? '');
+  const [hasPartner, setHasPartner] = useState(initial?.hasPartner ?? false);
+  const [partnerIncome, setPartnerIncome] = useState(initial?.partnerIncome ?? '');
+  const [children, setChildren] = useState(initial?.children ?? '0');
+  const [values, setValues] = useState<Record<string, string>>(initial?.values ?? {});
   const [openCase, setOpenCase] = useState<PensionCase>('DEATH');
+  const [saved, setSaved] = useState<'idle' | 'saving' | 'done' | 'failed'>('idle');
 
   const household: Household = useMemo(() => ({
     annualIncomeCents: income.trim() === '' ? null : money(income),
@@ -80,6 +95,46 @@ export function PensionAnalysis() {
 
   const set = (key: string, value: string) =>
     setValues((prev) => ({ ...prev, [key]: value }));
+
+  // Gespeichert wird verzoegert, nicht bei jedem Tastendruck: im Gespraech
+  // tippt der Berater Betraege in einem Zug, und ein Speichervorgang je
+  // Ziffer waere sinnlose Last - und bei wackligem Netz eine Fehlerquelle.
+  const first = useRef(true);
+  useEffect(() => {
+    if (!session) return;
+    if (first.current) { first.current = false; return; }
+
+    setSaved('saving');
+    const timer = window.setTimeout(() => {
+      const benefits = Object.fromEntries(PENSION_CASES.map((c) => [
+        c,
+        BENEFIT_ROWS[c]
+          .map((row) => ({
+            key: row.key,
+            pillar: row.pillar,
+            label: row.label,
+            annualCents: row.perChild ? 0 : money(values[row.key] ?? ''),
+            perChildCents: row.perChild ? money(values[row.key] ?? '') : 0,
+            requiresPartner: row.requiresPartner,
+          }))
+          .filter((b) => b.annualCents > 0 || b.perChildCents > 0),
+      ]));
+
+      void savePensionAnalysis({
+        sessionId: session.sessionId,
+        customerId: session.customerId,
+        annualIncomeCents: household.annualIncomeCents,
+        hasPartner: household.hasPartner,
+        partnerIncomeCents: household.partnerIncomeCents,
+        childCount: household.childCount,
+        targetPercent: household.targetPercent,
+        values,
+        benefits,
+      }).then((r) => setSaved(r.status === 'ok' ? 'done' : 'failed'));
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [session, household, values]);
 
   return (
     <div className="grid gap-6">
@@ -193,7 +248,16 @@ export function PensionAnalysis() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Ihre Situation im Ernstfall</CardTitle>
+          <CardTitle className="flex items-center justify-between gap-3">
+            <span>Ihre Situation im Ernstfall</span>
+            {session ? (
+              <span className="text-[0.75rem] font-normal text-ink-subtle">
+                {saved === 'saving' ? 'wird gespeichert …'
+                  : saved === 'done' ? 'gespeichert'
+                    : saved === 'failed' ? 'nicht gespeichert' : ''}
+              </span>
+            ) : null}
+          </CardTitle>
         </CardHeader>
         <div className="grid gap-4 px-5 py-4">
           {result.isEmpty ? (

@@ -1,5 +1,6 @@
 import type { CoverageState, Outcome, ProgressStatus } from './status';
 import { OUTCOME_LABEL } from './status';
+import type { PensionCase } from '@/domain/pension/types';
 
 /**
  * Das SummaryDocument (Architektur 10.3).
@@ -48,6 +49,32 @@ export type SummaryInputTask = {
   readonly dueDate: string | null;
 };
 
+/**
+ * Die Vorsorgeanalyse im Protokoll.
+ *
+ * Nicht die Eingabefelder, sondern das Ergebnis: was der Kunde in jedem
+ * Fall haette, was er sich vorgenommen hat, und was fehlt. Die Eingaben
+ * stehen in pension_analyses; hier steht, was beide angesehen haben.
+ */
+export type SummaryPensionCase = {
+  readonly pensionCase: PensionCase;
+  readonly label: string;
+  readonly totalCents: number;
+  readonly gapCents: number | null;
+  readonly coveragePercent: number | null;
+};
+
+export type SummaryPension = {
+  readonly annualIncomeCents: number | null;
+  readonly targetPercent: number | null;
+  readonly targetCents: number | null;
+  readonly hasPartner: boolean;
+  readonly childCount: number;
+  readonly cases: readonly SummaryPensionCase[];
+  /** Der Fall mit der groessten Luecke, als Satz fuer das Protokoll. */
+  readonly largestGapLabel: string | null;
+};
+
 export type SummaryInput = {
   readonly sessionId: string;
   readonly date: string;
@@ -60,6 +87,7 @@ export type SummaryInput = {
   readonly policies: readonly SummaryInputPolicy[];
   readonly notes: readonly SummaryInputNote[];
   readonly tasks: readonly SummaryInputTask[];
+  readonly pension: SummaryPension | null;
 };
 
 export type SummaryTopic = {
@@ -99,6 +127,7 @@ export type SummaryDocument = {
   readonly customerTasks: readonly { readonly title: string; readonly dueDate: string | null }[];
   readonly advisorTasks: readonly { readonly title: string; readonly dueDate: string | null }[];
   readonly totalAnnualPremiumCents: number;
+  readonly pension: SummaryPension | null;
 };
 
 const ACTION_OUTCOMES: ReadonlySet<Outcome> = new Set<Outcome>([
@@ -176,5 +205,6 @@ export function buildSummary(input: SummaryInput): SummaryDocument {
     advisorTasks: input.tasks.filter((t) => t.ownerType === 'ADVISOR').map(task),
     totalAnnualPremiumCents: input.policies.reduce(
       (sum, p) => sum + (p.annualPremiumCents ?? 0), 0),
+    pension: input.pension,
   };
 }

@@ -67,6 +67,7 @@ export default function CompletionPreviewPage() {
     customerTasks: [],
     advisorTasks: [],
     totalAnnualPremiumCents: 48_000,
+    pension: null,
   };
 
   const suggestions = suggestTasks(topics.map((t, i) => ({

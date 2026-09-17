@@ -60,12 +60,14 @@ const OUTCOME_COLOR: Partial<Record<Outcome, string>> = {
 };
 
 export function TopicDetail({
-  topic, name, notes, onCommand,
+  topic, name, notes, onCommand, extra,
 }: {
   topic: TopicState;
   name: string;
   notes: readonly NoteState[];
   onCommand: (payload: CommandPayload) => void;
+  /** Zusatz fuer einzelne Sparten - bei Vorsorge die Analyse. */
+  extra?: React.ReactNode | undefined;
 }) {
   const noteId = useId();
   const shared = notes.find((n) => n.visibility === 'SHARED' && n.topicId === topic.topicId);
@@ -116,6 +118,8 @@ export function TopicDetail({
           ))}
         </div>
       </fieldset>
+
+      {extra}
 
       <fieldset className="grid gap-2.5">
         <legend className="mb-1 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-ink-subtle">

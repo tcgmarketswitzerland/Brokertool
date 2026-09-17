@@ -1,11 +1,10 @@
--- Brokertool - Migrationen 0018 bis 0021 in einer Datei
+-- Brokertool - Migrationen 0018 bis 0023 in einer Datei
 --
 -- Zum Einspielen im Supabase SQL Editor: alles markieren, einfuegen,
 -- ausfuehren.
 --
--- Sie laesst sich gefahrlos mehrfach ausfuehren: jeder Schritt prueft,
--- ob er schon getan ist. Ein abgebrochener Durchgang ist damit kein
--- Problem - einfach nochmal einspielen.
+-- Mehrfaches Ausfuehren ist unschaedlich: jeder Schritt prueft, ob er
+-- schon getan ist.
 --
 -- Erzeugt am 2026-09-17 aus supabase/migrations/.
 
@@ -396,4 +395,156 @@ comment on function public.session_bootstrap() is
 revoke all on function public.session_bootstrap() from public;
 grant execute on function public.session_bootstrap() to authenticated;
 
+select public.assert_rls_complete();
+
+-- ========================================================================
+-- 0022_completion_one_topic.sql
+-- ========================================================================
+
+-- Abschluss ohne Pflichtsparten (fachliche Vorgabe, ersetzt 0018)
+--
+-- Bisher war eine Beratung erst abschliessbar, wenn jede Sparte ein
+-- Ergebnis hatte. Im echten Gespraech passt das nicht: ein Kunde kommt
+-- wegen der Motorfahrzeugversicherung und hat vierzig Minuten Zeit.
+--
+-- Die Regel wird deshalb umgedreht, ohne das Versprechen aufzugeben:
+-- abschliessen laesst sich ab einer besprochenen Sparte, und alle uebrigen
+-- werden dabei ausdruecklich auf "im Gespraech nicht thematisiert"
+-- gesetzt. Damit steht im Protokoll weiterhin zu jeder Sparte ein Satz -
+-- nur eben die Wahrheit, dass sie nicht behandelt wurde, statt einer
+-- Luecke. Das ist der entscheidende Unterschied: eine Luecke muss man
+-- spaeter erklaeren, einen dokumentierten Satz nicht.
+
+create or replace function public.complete_advice_session(
+  p_session_id uuid,
+  p_document   jsonb
+) returns uuid
+  language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_snapshot uuid;
+  v_settled int;
+  v_org uuid;
+begin
+  select s.organization_id into v_org
+    from public.advice_sessions s
+   where s.id = p_session_id
+     and s.organization_id = public.auth_org_id()
+     and s.status in ('DRAFT','IN_PROGRESS');
+  if v_org is null then
+    raise exception 'Beratung nicht gefunden oder bereits abgeschlossen' using errcode = '22023';
+  end if;
+
+  if not public.has_permission('advice:complete') then
+    raise exception 'Keine Berechtigung zum Abschliessen' using errcode = '42501';
+  end if;
+
+  -- Eine Beratung ohne eine einzige besprochene Sparte ist keine Beratung.
+  -- Sie abzuschliessen wuerde ein Protokoll erzeugen, das nichts belegt.
+  select count(*) into v_settled
+    from public.advice_session_topics t
+   where t.session_id = p_session_id
+     and t.outcome is not null;
+
+  if v_settled = 0 then
+    raise exception 'Mindestens eine Sparte braucht ein Ergebnis'
+      using errcode = 'check_violation';
+  end if;
+
+  -- Alles Uebrige wird festgehalten, nicht verschwiegen.
+  update public.advice_session_topics
+     set progress_status = 'SKIPPED', outcome = null
+   where session_id = p_session_id
+     and outcome is null
+     and progress_status <> 'SKIPPED';
+
+  insert into public.advice_session_snapshots
+    (organization_id, session_id, document, content_hash, created_by)
+  values
+    (v_org, p_session_id, p_document,
+     encode(sha256(convert_to(p_document::text, 'UTF8')), 'hex'), auth.uid())
+  returning id into v_snapshot;
+
+  update public.advice_sessions
+     set status = 'COMPLETED', completed_at = now(), updated_at = now()
+   where id = p_session_id;
+
+  return v_snapshot;
+end;
+$$;
+
+comment on function public.complete_advice_session(uuid, jsonb) is
+  'Schliesst eine Beratung ab. Nicht besprochene Sparten werden als "nicht thematisiert" festgehalten.';
+
+-- Die Kennzeichnung als Pflichtsparte bleibt im Datenmodell: sie steuert,
+-- was die Oberflaeche hervorhebt. Sie sperrt den Abschluss nicht mehr.
+select public.assert_rls_complete();
+
+-- ========================================================================
+-- 0023_pension_analysis.sql
+-- ========================================================================
+
+-- Vorsorgeanalyse (Konzeptpunkt 13)
+--
+-- Eine Analyse je Beratung. Sie haelt fest, was der Berater vom
+-- Vorsorgeausweis abgelesen hat - nicht, was ein Rechner geschaetzt hat.
+-- Genau deshalb gehoert sie ins Protokoll: die Zahlen stammen vom Kunden,
+-- der Berater hat sie erfasst, beide haben dasselbe angesehen.
+--
+-- Die Einzelposten liegen als JSONB in einer Spalte und nicht in einer
+-- Kindtabelle. Sie werden als Einheit erfasst, als Einheit gelesen und als
+-- Einheit eingefroren; ueber sie hinweg wird nie abgefragt. Eine
+-- Kindtabelle brauchte an jeder dieser Stellen einen Verbund und braechte
+-- nichts dafuer ein.
+
+create table if not exists pension_analyses (
+  id               uuid primary key default gen_random_uuid(),
+  organization_id  uuid not null references organizations(id) on delete cascade,
+  customer_id      uuid not null references customers(id) on delete cascade,
+  -- Eine Analyse je Beratung: sie ist Teil des Gespraechs, nicht ein
+  -- Stammdatum des Kunden.
+  session_id       uuid not null references advice_sessions(id) on delete cascade unique,
+  person_id        uuid references customer_persons(id) on delete set null,
+
+  -- Haushalt. Betraege in Rappen, wie ueberall im System.
+  annual_income_cents  bigint check (annual_income_cents is null or annual_income_cents >= 0),
+  has_partner          boolean not null default false,
+  partner_income_cents bigint check (partner_income_cents is null or partner_income_cents >= 0),
+  child_count          int not null default 0 check (child_count between 0 and 12),
+  -- Leer, bis der Berater sie mit dem Kunden festlegt. Ein Vorgabewert
+  -- waere eine Aussage, die niemand getroffen hat.
+  target_percent       numeric(5,2) check (target_percent is null
+                                           or target_percent between 0 and 200),
+
+  /*
+    Aufbau: { "<fall>": [ { "key", "pillar", "label",
+                            "annualCents", "perChildCents", "requiresPartner" } ] }
+    Faelle: DEATH, DISABILITY_ILLNESS, DISABILITY_ACCIDENT, RETIREMENT.
+  */
+  items            jsonb not null default '{}'::jsonb,
+
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  created_by       uuid references profiles(id) on delete set null,
+  updated_by       uuid references profiles(id) on delete set null
+);
+
+create index if not exists pension_analyses_customer_idx on pension_analyses (customer_id);
+
+drop trigger if exists trg_pension_touch on pension_analyses;
+create trigger trg_pension_touch before update on pension_analyses
+  for each row execute function public.touch_updated_at();
+
+drop trigger if exists trg_audit_pension on pension_analyses;
+create trigger trg_audit_pension
+  after insert or update or delete on pension_analyses
+  for each row execute function public.audit_trigger();
+
+-- Auch hier gilt der Schreibschutz: nach dem Abschluss steht die Analyse
+-- so im Protokoll, wie sie im Gespraech aussah.
+drop trigger if exists trg_freeze_pension on pension_analyses;
+create trigger trg_freeze_pension before update on pension_analyses
+  for each row execute function public.prevent_completed_session_changes();
+
+select public.apply_tenant_rls();
 select public.assert_rls_complete();

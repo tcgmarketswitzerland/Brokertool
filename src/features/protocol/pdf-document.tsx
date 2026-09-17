@@ -55,6 +55,11 @@ const s = StyleSheet.create({
   topicLine: { color: MUTED, marginBottom: 1 },
   topicBody: { textAlign: 'justify', lineHeight: 1.4 },
 
+  pensionRow: { flexDirection: 'row', marginBottom: 3 },
+  pensionLabel: { flex: 1 },
+  pensionValue: { width: 90, textAlign: 'right' },
+  pensionGap: { width: 120, textAlign: 'right', color: MUTED },
+
   signRow: { flexDirection: 'row', gap: 32, marginTop: 26 },
   signBox: { flex: 1 },
   signLine: { height: 46, borderBottomWidth: 0.7, borderBottomColor: INK },
@@ -184,6 +189,50 @@ export function ProtocolDocument({
             </View>
           );
         })}
+
+        {document.pension ? (
+          <View>
+            <Text style={s.section}>Vorsorgeanalyse</Text>
+            <Text style={{ color: MUTED, marginBottom: 6 }}>
+              Grundlage: Jahreseinkommen{' '}
+              {document.pension.annualIncomeCents
+                ? formatCHF(rappen(document.pension.annualIncomeCents)) : 'ohne Angabe'}
+              {document.pension.targetPercent !== null
+                ? `, angestrebte Absicherung ${document.pension.targetPercent} %` : ''}
+              {document.pension.hasPartner ? ', mit Partnerin oder Partner' : ', ohne Partner'}
+              {document.pension.childCount > 0
+                ? `, ${document.pension.childCount} ${
+                    document.pension.childCount === 1 ? 'Kind' : 'Kinder'}`
+                : ', keine Kinder'}.
+            </Text>
+
+            {document.pension.cases.map((c) => (
+              <View key={c.pensionCase} style={s.pensionRow}>
+                <Text style={s.pensionLabel}>{c.label}</Text>
+                <Text style={s.pensionValue}>{formatCHF(rappen(c.totalCents))}</Text>
+                <Text style={s.pensionGap}>
+                  {c.gapCents === null ? '—'
+                    : c.gapCents > 0
+                      ? `Lücke ${formatCHF(rappen(c.gapCents))}`
+                      : 'gedeckt'}
+                </Text>
+              </View>
+            ))}
+
+            {document.pension.largestGapLabel ? (
+              <Text style={{ marginTop: 6 }}>
+                Die grösste Lücke besteht im Fall {document.pension.largestGapLabel}.
+              </Text>
+            ) : null}
+
+            <Text style={{ marginTop: 6, color: MUTED, lineHeight: 1.5 }}>
+              Diese Auswertung ist eine Grobanalyse auf Grundlage der im Gespräch genannten
+              Angaben. Sie ersetzt weder eine Berechnung Ihrer Vorsorgeeinrichtung noch eine
+              verbindliche Leistungszusage eines Versicherers. Massgebend sind ausschliesslich
+              die Angaben Ihrer Vorsorgeeinrichtung und die Bedingungen Ihrer Policen.
+            </Text>
+          </View>
+        ) : null}
 
         <Text style={s.section}>Bestätigung</Text>
         <Text style={s.paragraph}>{CONFIRMATION_TEXT}</Text>

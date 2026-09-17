@@ -43,6 +43,7 @@ const DOC: SummaryDocument = {
   customerTasks: [{ title: 'Pensionskassenausweis zustellen', dueDate: '2026-09-30' }],
   advisorTasks: [{ title: 'Offerte einholen: Hausratversicherung', dueDate: '2026-09-22' }],
   totalAnnualPremiumCents: 48_000,
+  pension: null,
 };
 
 describe('Datumsformate', () => {
