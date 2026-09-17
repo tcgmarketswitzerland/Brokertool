@@ -2,13 +2,16 @@
 
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowLeft, Check, User, UserRound } from 'lucide-react';
-import { Alert, Badge, Button, Card, CardHeader, CardTitle, TopicIcon } from '@/components/ui';
+import { AlertTriangle, ArrowLeft, Check, PenLine, User, UserRound } from 'lucide-react';
+import {
+  Alert, Badge, Button, Card, CardHeader, CardTitle, Input, TopicIcon,
+} from '@/components/ui';
 import { formatCHF, rappen } from '@/domain/shared/money';
 import { TASK_OWNER_LABEL } from '@/domain/task/types';
 import type { SuggestedTask } from '@/domain/task/suggestions';
 import type { SummaryDocument } from '@/domain/advice/summary';
 import { completeSession, type CompleteState } from './actions';
+import { SignaturePad } from './signature-pad';
 
 const INITIAL: CompleteState = { status: 'idle' };
 
@@ -37,6 +40,7 @@ export function CompletionView({
   const [accepted, setAccepted] = useState<ReadonlySet<string>>(
     () => new Set(suggestions.map((s) => s.key)),
   );
+  const [signature, setSignature] = useState<string | null>(null);
   const [state, action, pending] = useActionState(completeSession, INITIAL);
 
   function toggle(key: string): void {
@@ -184,6 +188,38 @@ export function CompletionView({
               })}
             </ul>
           )}
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PenLine aria-hidden className="size-4 text-ink-subtle" />
+              Bestätigung durch den Kunden
+            </CardTitle>
+          </CardHeader>
+          <div className="grid gap-4 px-5 py-4">
+            <p className="text-[0.9375rem] leading-relaxed">
+              Ich bestätige, dass die oben aufgeführten Themen mit mir besprochen wurden und
+              dass meine Entscheidungen richtig wiedergegeben sind.
+            </p>
+
+            <div className="grid gap-1.5">
+              <label htmlFor="signer" className="text-[0.8125rem] font-medium">
+                Wer unterschreibt
+              </label>
+              <Input id="signer" name="signerName" defaultValue={document.customerName}
+                     maxLength={200} />
+            </div>
+
+            <SignaturePad label="Unterschrift des Kunden" onChange={setSignature} />
+            <input type="hidden" name="signature" value={signature ?? ''} />
+
+            <p className="text-[0.8125rem] leading-relaxed text-ink-subtle">
+              Die Unterschrift ist freiwillig — ohne sie lässt sich die Beratung ebenso
+              abschliessen. Mit ihr belegt das Protokoll zusätzlich, dass der Kunde den
+              festgehaltenen Inhalt gesehen hat.
+            </p>
+          </div>
         </Card>
 
         {state.status === 'error' ? <Alert tone="danger">{state.message}</Alert> : null}

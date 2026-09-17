@@ -1,6 +1,6 @@
 import { renderToBuffer } from '@react-pdf/renderer';
 import { ProtocolDocument } from '@/features/protocol/pdf-document';
-import { getSnapshot } from '@/features/protocol/queries';
+import { getSignature, getSnapshot } from '@/features/protocol/queries';
 
 export const dynamic = 'force-dynamic';
 // @react-pdf/renderer braucht Node-APIs; im Edge-Runtime faellt es aus.
@@ -22,8 +22,14 @@ export async function GET(
   const snapshot = await getSnapshot(sessionId);
   if (!snapshot) return new Response('Nicht gefunden', { status: 404 });
 
+  const signature = await getSignature(sessionId);
+
   const buffer = await renderToBuffer(
-    ProtocolDocument({ document: snapshot.document, contentHash: snapshot.contentHash }),
+    ProtocolDocument({
+      document: snapshot.document,
+      contentHash: snapshot.contentHash,
+      ...(signature ? { signature } : {}),
+    }),
   );
 
   const name = snapshot.document.customerName.replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60);

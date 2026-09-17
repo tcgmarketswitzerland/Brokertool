@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Download, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Download, Mail, PenLine, ShieldCheck } from 'lucide-react';
 import {
   Alert, Badge, Button, Card, CardContent, CardHeader, CardTitle, TopicIcon,
 } from '@/components/ui';
@@ -10,7 +10,7 @@ import { computeProgress } from '@/domain/advice/progress';
 import { formatCHF, rappen } from '@/domain/shared/money';
 import { formatShortDate, topicNarrative } from '@/domain/advice/protocol';
 import { getSession } from '@/features/advice/queries';
-import { getSnapshot } from '@/features/protocol/queries';
+import { getSignature, getSnapshot } from '@/features/protocol/queries';
 import { EmailDraft } from '@/features/protocol/email-draft';
 import { listSessionTasks } from '@/features/tasks/queries';
 import { TaskRow } from '@/features/tasks/components/task-row';
@@ -35,8 +35,9 @@ export default async function SessionSummaryPage({
   const session = await getSession(sessionId);
   if (!session) notFound();
 
-  const [snapshot, tasks] = await Promise.all([
+  const [snapshot, signature, tasks] = await Promise.all([
     session.status === 'COMPLETED' ? getSnapshot(sessionId) : Promise.resolve(null),
+    session.status === 'COMPLETED' ? getSignature(sessionId) : Promise.resolve(null),
     listSessionTasks(sessionId),
   ]);
   const today = new Date().toISOString().slice(0, 10);
@@ -224,6 +225,13 @@ export default async function SessionSummaryPage({
               Eingefroren am {formatShortDate(snapshot.createdAt.slice(0, 10))}
             </span>
             <span className="tabular">Dokumentkennung {snapshot.contentHash.slice(0, 12)}</span>
+            {signature ? (
+              <span className="flex items-center gap-1.5">
+                <PenLine aria-hidden className="size-3.5" />
+                Unterschrieben von {signature.signerName} am{' '}
+                {formatShortDate(signature.signedAt.slice(0, 10))}
+              </span>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

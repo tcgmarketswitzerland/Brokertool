@@ -9,6 +9,7 @@ import { dueDateFrom } from '@/domain/task/suggestions';
 import type { SummaryInputTask } from '@/domain/advice/summary';
 import type { Json } from '@/types/database';
 import { getCompletionData } from './queries';
+import { storeSignature } from './signature';
 
 export type CompleteState = { status: 'idle' } | { status: 'error'; message: string };
 
@@ -16,6 +17,14 @@ const schema = z.object({
   sessionId: z.uuid(),
   /** Schluessel der bestaetigten Vorschlaege, als JSON-Liste aus dem Formular. */
   acceptedKeys: z.array(z.string().max(80)).max(50),
+  signerName: z.string().trim().max(200).optional(),
+  /**
+   * Die Unterschrift als PNG-Data-URL. Begrenzt, damit ein manipuliertes
+   * Formular den Speicher nicht mit beliebigen Dateien fuellt - ein Strich
+   * auf 900 Pixel Breite liegt deutlich darunter.
+   */
+  signature: z.string().regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/)
+    .max(400_000).optional(),
 });
 
 /**
@@ -34,9 +43,12 @@ export async function completeSession(
   _prev: CompleteState, formData: FormData,
 ): Promise<CompleteState> {
   const raw = formData.get('acceptedKeys');
+  const signature = formData.get('signature');
   const parsed = schema.safeParse({
     sessionId: formData.get('sessionId'),
     acceptedKeys: typeof raw === 'string' && raw.length > 0 ? JSON.parse(raw) : [],
+    signerName: formData.get('signerName') || undefined,
+    signature: typeof signature === 'string' && signature.length > 0 ? signature : undefined,
   });
   if (!parsed.success) return { status: 'error', message: 'Eingabe prüfen.' };
 
@@ -88,7 +100,7 @@ export async function completeSession(
   const final = await getCompletionData(sessionId, tasks);
   if (!final) return { status: 'error', message: 'Beratung nicht gefunden.' };
 
-  const { error } = await supabase.rpc('complete_advice_session', {
+  const { data: snapshotId, error } = await supabase.rpc('complete_advice_session', {
     p_session_id: sessionId,
     // Das Dokument ist reines JSON; der Umweg ueber unknown ist noetig,
     // weil TypeScript readonly-Felder nicht auf den Json-Typ abbildet.
@@ -107,6 +119,20 @@ export async function completeSession(
           ? 'Sie dürfen Beratungen nicht abschliessen.'
           : 'Die Beratung konnte nicht abgeschlossen werden.',
     };
+  }
+
+  // Die Unterschrift wird nach dem Abschluss abgelegt: sie verweist auf
+  // den Snapshot, den es vorher nicht gibt. Scheitert sie, bleibt die
+  // Beratung abgeschlossen - sie nachtraeglich zurueckzudrehen waere
+  // schlimmer als eine fehlende Unterschrift, die sich nachholen laesst.
+  if (parsed.data.signature && snapshotId) {
+    await storeSignature(supabase, {
+      organizationId: data.session.organizationId,
+      sessionId,
+      snapshotId: String(snapshotId),
+      signerName: parsed.data.signerName || data.session.customerName,
+      dataUrl: parsed.data.signature,
+    });
   }
 
   logger.info('advice_completed', { session: safeId(sessionId) });

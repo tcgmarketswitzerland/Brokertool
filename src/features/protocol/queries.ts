@@ -36,3 +36,42 @@ export async function getSnapshot(sessionId: string): Promise<Snapshot | null> {
     createdAt: String(data.created_at),
   };
 }
+
+export type SignatureRecord = {
+  signerName: string;
+  signedAt: string;
+  /** Das Bild als Data-URL, damit der PDF-Renderer es ohne Netzzugriff einbettet. */
+  dataUrl: string | null;
+};
+
+/**
+ * Die Unterschrift zu einer Beratung.
+ *
+ * Das Bild wird hier heruntergeladen statt als signierte URL
+ * weitergereicht: der PDF-Renderer laeuft auf dem Server, und eine URL,
+ * die er selbst abruft, waere ein zweiter Weg an den Policies vorbei.
+ */
+export async function getSignature(sessionId: string): Promise<SignatureRecord | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('signatures')
+    .select('signer_name, signed_at, storage_path')
+    .eq('session_id', sessionId)
+    .eq('kind', 'CUSTOMER')
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const { data: file } = await supabase.storage
+    .from('signatures').download(String(data.storage_path));
+
+  const dataUrl = file
+    ? `data:image/png;base64,${Buffer.from(await file.arrayBuffer()).toString('base64')}`
+    : null;
+
+  return {
+    signerName: String(data.signer_name),
+    signedAt: String(data.signed_at),
+    dataUrl,
+  };
+}

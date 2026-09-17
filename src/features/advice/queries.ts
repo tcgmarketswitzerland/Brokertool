@@ -26,6 +26,7 @@ export type SessionNote = {
 
 export type AdviceSession = {
   id: string;
+  organizationId: string;
   status: 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   customerId: string;
   customerName: string;
@@ -67,7 +68,7 @@ export async function getSession(sessionId: string): Promise<AdviceSession | nul
   const { data, error } = await supabase
     .from('advice_sessions')
     .select(`
-      id, status, started_at, completed_at, customer_id,
+      id, organization_id, status, started_at, completed_at, customer_id,
       customers ( display_name ),
       organization_members ( display_name ),
       advice_session_participants ( display_name, attended ),
@@ -117,6 +118,7 @@ export async function getSession(sessionId: string): Promise<AdviceSession | nul
 
   return {
     id: String(data.id),
+    organizationId: String(data.organization_id),
     status: data.status as AdviceSession['status'],
     customerId: String(data.customer_id),
     customerName: String(customer.display_name ?? 'Kunde'),

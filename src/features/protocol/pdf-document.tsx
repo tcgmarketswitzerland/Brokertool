@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { formatCHF, rappen } from '@/domain/shared/money';
 import {
   CONFIRMATION_TEXT, disclaimerText, formatShortDate, formatSwissDate, topicNarrative,
@@ -58,6 +58,8 @@ const s = StyleSheet.create({
   signRow: { flexDirection: 'row', gap: 32, marginTop: 26 },
   signBox: { flex: 1 },
   signLine: { height: 46, borderBottomWidth: 0.7, borderBottomColor: INK },
+  signImage: { height: 46, objectFit: 'contain', objectPositionX: 0,
+               borderBottomWidth: 0.7, borderBottomColor: INK },
   signName: { marginTop: 4 },
   signRole: { color: MUTED },
 
@@ -86,10 +88,12 @@ function Bullet({ title, dueDate }: { title: string; dueDate: string | null }) {
 }
 
 export function ProtocolDocument({
-  document, contentHash,
+  document, contentHash, signature,
 }: {
   document: SummaryDocument;
   contentHash: string;
+  /** Unterschrift des Kunden, falls erfasst. Ohne sie bleibt die Linie leer. */
+  signature?: { signerName: string; dataUrl: string | null } | undefined;
 }) {
   const overview = [
     `${document.counts.discussed} von ${document.counts.total} Sparten besprochen`,
@@ -186,8 +190,14 @@ export function ProtocolDocument({
 
         <View style={s.signRow}>
           <View style={s.signBox}>
-            <View style={s.signLine} />
-            <Text style={s.signName}>{document.customerName}</Text>
+            {signature?.dataUrl
+              // Image stammt aus @react-pdf/renderer, nicht aus dem DOM -
+              // ein alt-Attribut gaebe es im PDF nicht, der Name steht
+              // ohnehin darunter.
+              // eslint-disable-next-line jsx-a11y/alt-text
+              ? <Image src={signature.dataUrl} style={s.signImage} />
+              : <View style={s.signLine} />}
+            <Text style={s.signName}>{signature?.signerName ?? document.customerName}</Text>
             <Text style={s.signRole}>
               {document.location ? `${document.location}, ` : ''}
               {formatShortDate(document.date)}
