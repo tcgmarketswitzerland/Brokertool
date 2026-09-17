@@ -78,6 +78,21 @@
   --radius-lg: 0.625rem;
 
   /* Schatten nur fuer echte Ebenen ueber der Seite. */
+/* --- Vorsorgegrafik ------------------------------------------------------
+   Kategoriale Palette, gegen die Zeichenflaeche geprueft: Helligkeitsband,
+   Farbstaerke, Unterscheidbarkeit bei Farbfehlsichtigkeit (Delta E) und
+   Kontrast. Nicht nach Augenmass gewaehlt, sondern mit dem Pruefskript
+   durchgerechnet - Rot/Gruen-Verwechslungen faellt man sonst genau dann
+   auf, wenn der Kunde am Tisch sitzt.
+
+   Die Reihenfolge ist fest und wird nie durchgetauscht: eine Saeule behaelt
+   ihre Farbe, auch wenn sie in einem Fall gar nicht vorkommt.             */
+  --pillar-1:     #00859e;
+  --pillar-uvg:   #f09638;
+  --pillar-2:     #513bb2;
+  --pillar-3:     #219340;
+  --pillar-other: #962f86;
+  --pillar-gap:   oklch(60% 0.02 255 / 0.22);
   --shadow-pop: 0 1px 2px oklch(23% 0.016 258 / 0.06),
                 0 8px 24px -6px oklch(23% 0.016 258 / 0.14);
 
@@ -126,7 +141,13 @@
     --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.3),
                   0 8px 24px -6px oklch(0% 0 0 / 0.5);
 
-    color-scheme: dark;
+    --pillar-1:     #0099a8;
+  --pillar-uvg:   #cb7e00;
+  --pillar-2:     #6c5dd3;
+  --pillar-3:     #369f56;
+  --pillar-other: #b051a9;
+  --pillar-gap:   oklch(70% 0.02 255 / 0.3);
+  color-scheme: dark;
   }
 }
 
@@ -161,6 +182,12 @@
   --status-declined:    oklch(56% 0.028 300);
   --status-follow-up:   oklch(70% 0.115 305);
   --focus-ring:      oklch(74% 0.12 205);
+  --pillar-1:     #0099a8;
+  --pillar-uvg:   #cb7e00;
+  --pillar-2:     #6c5dd3;
+  --pillar-3:     #369f56;
+  --pillar-other: #b051a9;
+  --pillar-gap:   oklch(70% 0.02 255 / 0.3);
   --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.3),
                 0 8px 24px -6px oklch(0% 0 0 / 0.5);
   color-scheme: dark;
