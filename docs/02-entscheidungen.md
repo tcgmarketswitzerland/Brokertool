@@ -137,6 +137,44 @@ einer Variablen namens `ANON_KEY` wäre in sechs Monaten eine Fehlerquelle. Rege
 Baumscan in `scripts/check-service-role.mjs` gelten unverändert für `SUPABASE_SECRET_KEY`.
 
 
+## ADR-007 — iPad und iPhone als installierbare Web-App, App Store später und nur mit Grund
+**Datum:** 2026-09-17 · **Status:** entschieden
+
+**Entscheidung:** Brokertool bleibt eine Webanwendung und wird über das Web-App-Manifest auf iPad
+und iPhone installierbar („Zum Home-Bildschirm"). Es gibt vorerst keine App-Store-Fassung. Die
+Anwendung wird aber so gebaut, dass ein nativer Rahmen (Capacitor) später dieselbe Anwendung laden
+kann, ohne dass etwas umgeschrieben werden muss.
+
+**Begründung:**
+
+Eine installierte Web-App liefert praktisch alles, was im Kundengespräch zählt: eigenes Symbol auf
+dem Home-Bildschirm, Start ohne Browserleiste, Vollbild, eigene Statusleistenfarbe. Der Berater
+sieht kein Adressfeld — und der Kunde, der mitliest, auch nicht.
+
+Was sie nicht liefert: Push-Benachrichtigungen auf iOS unterhalb der jeweils aktuellen Version,
+Kamera- und Dateizugriff in der nativen Tiefe, und Auffindbarkeit im App Store. Keines davon ist
+für das MVP nötig.
+
+Gegen eine App-Store-Fassung jetzt spricht mehr als der Aufwand: Apple weist Apps ab, die nur eine
+Website in einen Rahmen packen (Richtlinie 4.2, „Minimum Functionality"). Eine Einreichung ohne
+nativen Mehrwert kostet Entwicklerkonto, Wartezeit und endet voraussichtlich mit einer Ablehnung.
+Der Mehrwert müsste erst existieren — etwa Push für fällige Aufgaben oder das Einlesen einer Police
+mit der Kamera.
+
+**Konsequenz:**
+
+- Manifest, Symbole und iOS-Metadaten stehen (`src/app/manifest.ts`, `public/icons/`).
+- `viewport-fit=cover` plus `env(safe-area-inset-*)`: ohne die Abstände läge die Bedienleiste des
+  Beratungsmodus als installierte App unter dem Home-Indikator.
+- Jede Ansicht muss ab 390 px Breite ohne waagrechtes Scrollen funktionieren. Das wird bei jeder
+  Oberflächenänderung geprüft, nicht nachträglich repariert.
+- **Noch offen:** ein Service Worker. Ohne ihn startet die Anwendung offline nicht — die
+  Befehlspipeline puffert zwar Eingaben im Gespräch (ADR-002), aber nur solange die Seite offen
+  bleibt. Das ist die nächste Stufe, wenn der Feldtest zeigt, dass es gebraucht wird.
+- Der Weg in den App Store bleibt offen: Capacitor lädt dieselbe gehostete Anwendung. Ausgelöst
+  wird er durch ein natives Bedürfnis, nicht durch den Wunsch nach einem Symbol im Store.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |

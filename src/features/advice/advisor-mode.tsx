@@ -65,8 +65,8 @@ export function AdvisorMode({
 
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 px-5 py-3">
+      <header className="safe-top safe-x sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-4xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-5">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[1.0625rem] font-semibold">{customerName}</p>
             {participants.length > 0 ? (
@@ -100,7 +100,7 @@ export function AdvisorMode({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl px-5 py-6">
+      <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-5">
         {sync.kind === 'conflict' ? (
           <Alert tone="danger" title={
             sync.reason === 'SESSION_CLOSED'
@@ -188,8 +188,8 @@ export function AdvisorMode({
         )}
       </main>
 
-      <footer className="sticky bottom-0 border-t border-line bg-bg/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-5 py-3">
+      <footer className="safe-bottom safe-x sticky bottom-0 border-t border-line bg-bg/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-5">
           <Button variant="ghost" onClick={() => step(-1)} disabled={activeIndex <= 0}>
             <ChevronLeft aria-hidden />Zurück
           </Button>

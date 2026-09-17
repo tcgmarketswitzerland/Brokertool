@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr]">
-      <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
+      <header className="safe-top safe-x sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
         <div className="flex h-14 items-center gap-4 px-4 sm:px-6">
           <Link href="/dashboard" className="rounded-md text-ink"><Logo /></Link>
 
@@ -80,7 +80,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <main className="safe-bottom safe-x mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        {children}
+      </main>
     </div>
   );
 }

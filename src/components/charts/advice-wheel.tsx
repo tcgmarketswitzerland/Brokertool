@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef } from 'react';
+import { useRef } from 'react';
 import { cn } from '@/lib/cn';
 
 /**
@@ -47,7 +47,15 @@ function polar(angle: number, radius: number): [number, number] {
  */
 function wrap(label: string, max = 16): string[] {
   if (label.length <= max) return [label];
-  const words = label.split(' ');
+  // Zusammensetzungen wie "Motorfahrzeugversicherung" haben keine Luecke,
+  // an der sich umbrechen liesse. Ungetrennt ragen sie aus dem
+  // Zeichenbereich und werden am Rand abgeschnitten - ausgerechnet bei den
+  // Sparten mit den laengsten Namen.
+  const words = label.split(' ').flatMap((word) => {
+    if (word.length <= max) return [word];
+    const cut = Math.ceil(word.length / 2);
+    return [`${word.slice(0, cut)}-`, word.slice(cut)];
+  });
   const lines: string[] = [];
   let current = '';
 
@@ -109,7 +117,6 @@ export function AdviceWheel({
   activeId?: string | undefined;
   className?: string;
 }) {
-  const titleId = useId();
   const refs = useRef(new Map<string, SVGGElement>());
 
   if (segments.length === 0) return null;
@@ -124,13 +131,16 @@ export function AdviceWheel({
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="group"
-      aria-labelledby={titleId}
-      className={cn('h-auto w-full max-w-[min(94vw,640px)] select-none', className)}
+      // aria-label statt eines <title> im SVG: React 19 behandelt <title>
+      // als Dokumenttitel und hebt es aus dem SVG heraus. Das Ergebnis war
+      // ein Hydrationskonflikt - React verwarf den servergerenderten Baum
+      // und zeichnete das Rad im Browser neu.
+      aria-label={`Beratungsrad: ${settled} von ${segments.length} Themen erledigt`}
+      // min-w-0: ohne das kann das Rad in einem Flex-Eltern nicht unter
+      // seine Eigenbreite schrumpfen und schiebt die ganze Seite in die
+      // Waagrechte - am Telefon der haeufigste Layoutfehler.
+      className={cn('h-auto w-full min-w-0 max-w-[min(94vw,640px)] select-none', className)}
     >
-      <title id={titleId}>
-        Beratungsrad: {settled} von {segments.length} Themen erledigt
-      </title>
-
       {segments.map((segment, index) => {
         // Oben beginnen, im Uhrzeigersinn - so liest man ein Zifferblatt.
         const start = index * step - Math.PI / 2 + GAP / 2;

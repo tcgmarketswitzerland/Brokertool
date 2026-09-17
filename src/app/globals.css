@@ -267,3 +267,20 @@ p  { text-wrap: pretty; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Sichere Bereiche auf iPhone und iPad --------------------------------
+   Das Ansichtsfenster steht auf viewport-fit=cover: die Seite laeuft bis
+   unter Notch, Dynamic Island und Home-Indikator. Das ist gewollt - eine
+   Kopfzeile, die dort endet, wo das Glas aufhoert, sieht nach Website aus,
+   nicht nach Anwendung. Zurueckgeholt werden die Abstaende genau dort, wo
+   etwas bedienbar sein muss.
+
+   Als installierte App ohne Browserleiste ist das kein Feinschliff: ohne
+   diese Abstaende liegt die untere Bedienleiste des Beratungsmodus unter
+   dem Home-Indikator und ist nicht mehr zuverlaessig zu treffen.          */
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-x {
+  padding-left:  env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
