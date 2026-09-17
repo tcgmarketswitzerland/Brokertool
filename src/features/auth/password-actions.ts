@@ -1,9 +1,9 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { siteOrigin } from '@/lib/site-url';
 import { logger, safeId } from '@/lib/logger';
 import { emailSchema, passwordSchema } from './schemas';
 
@@ -24,12 +24,9 @@ export async function requestPasswordReset(
     return { status: 'error', message: 'Keine gültige E-Mail-Adresse.' };
   }
 
-  const host = (await headers()).get('host') ?? '';
-  const proto = host.startsWith('localhost') ? 'http' : 'https';
-
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
-    redirectTo: `${proto}://${host}/auth/callback?type=recovery`,
+    redirectTo: `${await siteOrigin()}/auth/callback?type=recovery`,
   });
 
   if (error) {

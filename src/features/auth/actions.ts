@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import type { Route } from 'next';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { siteOrigin } from '@/lib/site-url';
 import { logger, safeId } from '@/lib/logger';
 import { type AuthState, signInSchema, signUpSchema } from './schemas';
 
@@ -66,7 +67,13 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.fullName } },
+    options: {
+      data: { full_name: parsed.data.fullName },
+      // Ohne diese Angabe nimmt Supabase die im Dashboard hinterlegte
+      // Site-URL - im Auslieferungszustand http://localhost:3000. Der
+      // Bestaetigungslink zeigte dann auf den Rechner des Empfaengers.
+      emailRedirectTo: `${await siteOrigin()}/auth/callback`,
+    },
   });
 
   if (error) {

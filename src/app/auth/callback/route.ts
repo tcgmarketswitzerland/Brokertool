@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { siteOrigin } from '@/lib/site-url';
 import { logger, safeId } from '@/lib/logger';
 
 /**
@@ -11,7 +12,11 @@ import { logger, safeId } from '@/lib/logger';
  * muesste.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  // Nicht request.nextUrl.origin: hinter dem Proxy steht dort der interne
+  // Name, und die Weiterleitung landete auf einer Adresse, die es von
+  // aussen nicht gibt.
+  const origin = await siteOrigin();
   const code = searchParams.get('code');
   const type = searchParams.get('type');
   const next = searchParams.get('next');
