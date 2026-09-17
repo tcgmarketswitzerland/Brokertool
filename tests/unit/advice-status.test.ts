@@ -4,7 +4,7 @@ import {
   type Outcome, type ProgressStatus, type TopicState,
 } from '@/domain/advice/status';
 import { computeProgress, isSettled, type TopicProgress } from '@/domain/advice/progress';
-import { canCompleteSession } from '@/domain/advice/completion';
+import { canCompleteSession, settleUntouched } from '@/domain/advice/completion';
 
 const state = (progressStatus: ProgressStatus, outcome: Outcome | null = null): TopicState =>
   ({ progressStatus, outcome });
@@ -131,8 +131,11 @@ describe('Fortschritt', () => {
   });
 });
 
-describe('Abschlussregel — kein Bereich wird vergessen', () => {
-  it('verweigert den Abschluss bei einem offenen Pflichtthema und nennt es', () => {
+describe('Abschlussregel — eine Sparte genuegt, der Rest wird festgehalten', () => {
+  it('erlaubt den Abschluss ab einer besprochenen Sparte', () => {
+    // Der echte Fall: der Kunde kommt wegen einer Sparte und hat eine
+    // Stunde Zeit. Alles Uebrige geht als "nicht thematisiert" ins
+    // Protokoll, nicht als Luecke.
     const result = canCompleteSession({
       status: 'IN_PROGRESS',
       topics: [
@@ -141,34 +144,30 @@ describe('Abschlussregel — kein Bereich wird vergessen', () => {
         topic('reise', false, 'NOT_STARTED'),
       ],
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok && result.error.kind === 'MISSING_REQUIRED') {
-      expect(result.error.topics).toEqual(['vorsorge']);
-    }
+    expect(result.ok).toBe(true);
   });
 
-  it('erlaubt den Abschluss, wenn Pflichtthemen uebersprungen wurden', () => {
-    // Ausdruecklich uebersprungen ist eine Entscheidung, kein Versaeumnis -
-    // und genau das steht spaeter so im Protokoll.
+  it('verweigert den Abschluss, solange keine einzige Sparte ein Ergebnis hat', () => {
+    // Ein Protokoll ohne ein einziges Ergebnis belegt nichts.
+    const result = canCompleteSession({
+      status: 'IN_PROGRESS',
+      topics: [topic('vorsorge', true, 'IN_PROGRESS'), topic('reise', false, 'NOT_STARTED')],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe('NOTHING_DISCUSSED');
+  });
+
+  it('zaehlt eine uebersprungene Sparte nicht als Ergebnis', () => {
+    // Uebersprungen heisst "nicht besprochen" - daraus laesst sich kein
+    // Protokoll bauen, das etwas aussagt.
     const result = canCompleteSession({
       status: 'IN_PROGRESS',
       topics: [topic('vorsorge', true, 'SKIPPED'), topic('reise', false, 'NOT_STARTED')],
     });
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
   });
 
-  it('erlaubt den Abschluss bei offenen Nicht-Pflichtthemen', () => {
-    const result = canCompleteSession({
-      status: 'IN_PROGRESS',
-      topics: [
-        topic('hausrat', true, 'DISCUSSED', 'CLIENT_DECLINED'),
-        topic('cyber', false, 'NOT_STARTED'),
-      ],
-    });
-    expect(result.ok).toBe(true);
-  });
-
-  it('eine Ablehnung zaehlt als erledigt', () => {
+  it('eine Ablehnung zaehlt als Ergebnis', () => {
     const result = canCompleteSession({
       status: 'IN_PROGRESS',
       topics: [topic('vorsorge', true, 'DISCUSSED', 'CLIENT_DECLINED')],
@@ -187,21 +186,22 @@ describe('Abschlussregel — kein Bereich wird vergessen', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.kind).toBe('NO_TOPICS');
   });
+});
 
-  it('nennt alle offenen Pflichtthemen, nicht nur das erste', () => {
-    // Der Berater soll einmal springen und alles erledigen, statt die Meldung
-    // dreimal nacheinander zu bekommen.
-    const result = canCompleteSession({
-      status: 'IN_PROGRESS',
-      topics: [
-        topic('vorsorge', true, 'NOT_STARTED'),
-        topic('rechtsschutz', true, 'IN_PROGRESS'),
-        topic('cyber', true, 'NOT_STARTED'),
-      ],
-    });
-    expect(result.ok).toBe(false);
-    if (!result.ok && result.error.kind === 'MISSING_REQUIRED') {
-      expect(result.error.topics).toEqual(['vorsorge', 'rechtsschutz', 'cyber']);
-    }
+describe('Unberuehrte Sparten beim Abschluss', () => {
+  it('macht aus einer unberuehrten Sparte "nicht thematisiert"', () => {
+    expect(settleUntouched(topic('reise', false, 'NOT_STARTED')))
+      .toMatchObject({ progressStatus: 'SKIPPED', outcome: null });
+  });
+
+  it('laesst eine besprochene Sparte unveraendert', () => {
+    const discussed = topic('hausrat', true, 'DISCUSSED', 'OFFER_REQUESTED');
+    expect(settleUntouched(discussed)).toBe(discussed);
+  });
+
+  it('laesst eine bereits uebersprungene Sparte unveraendert', () => {
+    const skipped = topic('cyber', false, 'SKIPPED');
+    expect(settleUntouched(skipped)).toBe(skipped);
   });
 });
+

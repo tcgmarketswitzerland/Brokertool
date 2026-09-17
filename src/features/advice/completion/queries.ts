@@ -4,6 +4,7 @@ import { annualPremiumCents } from '@/domain/policy/types';
 import {
   buildSummary, type SummaryDocument, type SummaryInput, type SummaryInputTask,
 } from '@/domain/advice/summary';
+import { settleUntouched } from '@/domain/advice/completion';
 import { suggestTasks, type SuggestedTask } from '@/domain/task/suggestions';
 import { listPolicies } from '@/features/policies/queries';
 import { getSession, type AdviceSession } from '@/features/advice/queries';
@@ -51,17 +52,28 @@ export async function getCompletionData(
     advisorName: session.advisorName,
     organizationName: orgName,
     location: null,
-    topics: session.topics.map((t) => ({
-      topicId: t.topicId,
-      slug: t.slug,
-      name: t.name,
-      icon: t.icon,
-      displayOrder: t.displayOrder,
-      isRequired: t.isRequired,
-      progressStatus: t.progressStatus,
-      outcome: t.outcome,
-      coverageState: t.coverageState,
-    })),
+    // settleUntouched: dieselbe Regel, die der Abschluss in der Datenbank
+    // anwendet (Migration 0022). Ohne sie zeigte die Vorschau "offen", wo
+    // gleich "nicht thematisiert" stehen wird.
+    topics: session.topics.map((t) => {
+      const settled = settleUntouched({
+        topicId: t.topicId,
+        isRequired: t.isRequired,
+        progressStatus: t.progressStatus,
+        outcome: t.outcome,
+      });
+      return {
+        topicId: t.topicId,
+        slug: t.slug,
+        name: t.name,
+        icon: t.icon,
+        displayOrder: t.displayOrder,
+        isRequired: t.isRequired,
+        progressStatus: settled.progressStatus,
+        outcome: settled.outcome,
+        coverageState: t.coverageState,
+      };
+    }),
     policies: policies.map((p) => ({
       topicId: p.topicId,
       insurerName: p.insurerName,

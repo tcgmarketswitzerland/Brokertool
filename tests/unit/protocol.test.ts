@@ -93,7 +93,7 @@ describe('Spartentext im Protokoll', () => {
 
   it('sagt bei einer uebersprungenen Sparte, dass nicht beraten wurde', () => {
     expect(topicNarrative(DOC.topics[2]!, DOC))
-      .toBe('Die Sparte Cyberversicherung wurde im Gespräch vom 15. September 2026 nicht behandelt.');
+      .toBe('Die Sparte Cyberversicherung wurde im Gespräch vom 15. September 2026 nicht thematisiert.');
   });
 
   it('uebernimmt sonst die Notiz des Beraters unveraendert', () => {

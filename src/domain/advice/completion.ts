@@ -1,17 +1,23 @@
 import { err, ok, type Result } from '@/domain/shared/result';
-import { isSettled, type TopicProgress } from './progress';
+import type { TopicProgress } from './progress';
 
 /**
- * Die zentrale Produktregel: eine Beratung ist erst abschliessbar, wenn
- * jedes Pflichtthema ein Ergebnis hat oder ausdruecklich uebersprungen
- * wurde.
+ * Wann eine Beratung abschliessbar ist.
  *
- * Das ist die technische Fassung des Versprechens "kein Bereich wird
- * vergessen" - und damit der wichtigste Testfall im gesamten System.
+ * Frueher galt: jede Pflichtsparte braucht ein Ergebnis. Das passte nicht
+ * zum echten Gespraech - ein Kunde kommt wegen einer Sparte und hat eine
+ * Stunde Zeit. Jetzt genuegt eine besprochene Sparte; alle uebrigen werden
+ * beim Abschluss ausdruecklich als "im Gespraech nicht thematisiert"
+ * festgehalten.
+ *
+ * Das Versprechen "kein Bereich wird vergessen" bleibt damit bestehen, nur
+ * anders eingeloest: nicht durch eine Sperre, sondern dadurch, dass zu
+ * jeder Sparte ein Satz im Protokoll steht. Eine Luecke muss man spaeter
+ * erklaeren, einen dokumentierten Satz nicht.
  */
 
 export type CompletionBlocker =
-  | { kind: 'MISSING_REQUIRED'; topics: readonly string[] }
+  | { kind: 'NOTHING_DISCUSSED' }
   | { kind: 'ALREADY_COMPLETED' }
   | { kind: 'NOT_STARTED' }
   | { kind: 'NO_TOPICS' };
@@ -28,11 +34,24 @@ export function canCompleteSession(
   if (session.status === 'CANCELLED') return err({ kind: 'NOT_STARTED' });
   if (session.topics.length === 0) return err({ kind: 'NO_TOPICS' });
 
-  const missing = session.topics
-    .filter((t) => t.isRequired && !isSettled(t))
-    .map((t) => t.topicId);
-
-  if (missing.length > 0) return err({ kind: 'MISSING_REQUIRED', topics: missing });
+  // Eine Beratung ohne eine einzige besprochene Sparte ist keine Beratung.
+  // Ihr Protokoll wuerde nichts belegen.
+  if (!session.topics.some((t) => t.outcome !== null)) {
+    return err({ kind: 'NOTHING_DISCUSSED' });
+  }
 
   return ok(true);
+}
+
+/**
+ * Was beim Abschluss aus einer unberuehrten Sparte wird.
+ *
+ * Dieselbe Regel laeuft in der Datenbank (Migration 0022). Hier steht sie,
+ * damit die Vorschau vor dem Abschluss genau das zeigt, was danach im
+ * Protokoll steht - eine Vorschau, die etwas anderes zeigt als das
+ * Ergebnis, waere schlimmer als gar keine.
+ */
+export function settleUntouched<T extends TopicProgress>(topic: T): T {
+  if (topic.outcome !== null || topic.progressStatus === 'SKIPPED') return topic;
+  return { ...topic, progressStatus: 'SKIPPED' as const, outcome: null };
 }

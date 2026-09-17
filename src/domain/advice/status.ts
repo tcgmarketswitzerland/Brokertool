@@ -26,17 +26,36 @@ export const PROGRESS_LABEL: Record<ProgressStatus, string> = {
   NOT_STARTED: 'Nicht besprochen',
   IN_PROGRESS: 'In Bearbeitung',
   DISCUSSED: 'Besprochen',
-  SKIPPED: 'Übersprungen',
+  SKIPPED: 'Im Gespräch nicht thematisiert',
 };
 
 export const OUTCOME_LABEL: Record<Outcome, string> = {
-  NO_ACTION_NEEDED: 'Kein Handlungsbedarf',
-  ACTION_REQUIRED: 'Handlungsbedarf',
-  OFFER_REQUESTED: 'Offerte gewünscht',
-  CONTRACT_REQUESTED: 'Abschluss gewünscht',
+  CONTRACT_REQUESTED: 'Offerte unterzeichnen',
+  OFFER_REQUESTED: 'Offerte bestellen',
+  ACTION_REQUIRED: 'Anpassung gewünscht',
+  NO_ACTION_NEEDED: 'Kein Handlungsbedarf seitens Broker',
+  CLIENT_DECLINED: 'Kein Handlungsbedarf seitens Kunden',
   FOLLOW_UP: 'Später anschauen',
-  CLIENT_DECLINED: 'Kunde lehnt ab',
 };
+
+/**
+ * Was im Gespraech zur Auswahl steht, in dieser Reihenfolge.
+ *
+ * Getrennt von OUTCOMES, weil FOLLOW_UP in aelteren Beratungen vorkommt
+ * und dort lesbar bleiben muss - angeboten wird es nicht mehr. Einen
+ * Enum-Wert aus der Datenbank zu entfernen hiesse, bestehende
+ * Dokumentation unlesbar zu machen; das waere ein hoher Preis fuer eine
+ * kuerzere Liste.
+ *
+ * Die Trennung "seitens Broker" und "seitens Kunden" ist keine Feinheit:
+ * im ersten Fall sagt der Fachmann, dass nichts zu tun ist, im zweiten
+ * entscheidet der Kunde gegen den Rat. Nur der zweite Fall muss im
+ * Streitfall belegen, worueber aufgeklaert wurde.
+ */
+export const SELECTABLE_OUTCOMES = [
+  'CONTRACT_REQUESTED', 'OFFER_REQUESTED', 'ACTION_REQUIRED',
+  'NO_ACTION_NEEDED', 'CLIENT_DECLINED',
+] as const satisfies readonly Outcome[];
 
 export const COVERAGE_LABEL: Record<CoverageState, string> = {
   UNKNOWN: 'Unbekannt',

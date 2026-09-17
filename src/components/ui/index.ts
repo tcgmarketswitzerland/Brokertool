@@ -6,4 +6,4 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { Badge } from './badge';
 export { Alert } from './alert';
 export { Logo } from './logo';
-export { TopicIcon } from './topic-icon';
+export { TopicIcon, TopicGlyph } from './topic-icon';

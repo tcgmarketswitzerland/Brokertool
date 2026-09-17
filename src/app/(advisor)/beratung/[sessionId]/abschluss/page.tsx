@@ -25,19 +25,20 @@ export default async function CompletionPage({
     })),
   });
 
-  // Die Sperre nennt Namen, keine Kennungen: der Berater soll sehen, wohin
-  // er zurueckspringen muss, nicht dass etwas fehlt.
-  const blockers = check.ok || check.error.kind !== 'MISSING_REQUIRED'
-    ? []
-    : check.error.topics.map(
-        (id) => data.session.topics.find((t) => t.topicId === id)?.name ?? id);
+  // Die Namen der Sparten, die als "nicht thematisiert" ins Protokoll
+  // gehen. Der Berater sieht damit vor dem Abschluss, was er festhaelt -
+  // und kann zurueckspringen, wenn eine davon doch besprochen wurde.
+  const untouched = data.session.topics
+    .filter((t) => t.outcome === null)
+    .map((t) => t.name);
 
   return (
     <CompletionView
       sessionId={sessionId}
       document={data.document}
       suggestions={data.suggestions}
-      blockers={blockers}
+      untouched={untouched}
+      blocked={!check.ok}
     />
   );
 }

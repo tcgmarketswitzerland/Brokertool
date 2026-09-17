@@ -47,10 +47,10 @@ describe('Protokolldokument', () => {
     expect(alleTexte).toContain('höhere Fahrraddeckung');
   });
 
-  it('nennt eine übersprungene Sparte "Nicht behandelt", nicht "Offen"', () => {
+  it('nennt eine übersprungene Sparte "Nicht thematisiert", nicht "Offen"', () => {
     // Eine Formulierung, die nach Beratung klingt, schadet dem Berater mehr
     // als die Wahrheit.
-    expect(doc.topics.find((t) => t.slug === 'reise')?.outcomeLabel).toBe('Nicht behandelt');
+    expect(doc.topics.find((t) => t.slug === 'reise')?.outcomeLabel).toBe('Nicht thematisiert');
   });
 
   it('sortiert nach der Reihenfolge des Gesprächs', () => {
@@ -144,7 +144,7 @@ describe('Dokumentierte Ablehnung', () => {
 describe('Übersprungene Sparte', () => {
   it('behauptet keine Beratung', () => {
     const t = buildSkippedText('Hypothek', '15.09.2026');
-    expect(t).toBe('Die Sparte Hypothek wurde im Gespräch vom 15.09.2026 nicht behandelt.');
+    expect(t).toBe('Die Sparte Hypothek wurde im Gespräch vom 15.09.2026 nicht thematisiert.');
     expect(t).not.toContain('besprochen');
   });
 });

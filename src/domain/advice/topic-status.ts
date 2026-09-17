@@ -41,9 +41,9 @@ export const DISPLAY_STATE_META: Record<
 > = {
   NOT_STARTED: { label: 'Nicht besprochen', color: 'var(--status-not-started)', icon: 'circle-dashed' },
   IN_PROGRESS: { label: 'In Bearbeitung',   color: 'var(--status-progress)',    icon: 'circle-dot' },
-  NO_ACTION:   { label: 'Kein Handlungsbedarf', color: 'var(--status-no-action)', icon: 'check' },
+  NO_ACTION:   { label: 'Kein Bedarf seitens Broker', color: 'var(--status-no-action)', icon: 'check' },
   ACTION:      { label: 'Handlungsbedarf',  color: 'var(--status-action)',      icon: 'alert' },
-  DECLINED:    { label: 'Kunde lehnt ab',   color: 'var(--status-declined)',    icon: 'slash' },
+  DECLINED:    { label: 'Kein Bedarf seitens Kunden', color: 'var(--status-declined)', icon: 'slash' },
   FOLLOW_UP:   { label: 'Später anschauen', color: 'var(--status-follow-up)',   icon: 'clock' },
-  SKIPPED:     { label: 'Übersprungen',     color: 'var(--status-declined)',    icon: 'minus' },
+  SKIPPED:     { label: 'Nicht thematisiert', color: 'var(--status-not-started)', icon: 'minus' },
 };

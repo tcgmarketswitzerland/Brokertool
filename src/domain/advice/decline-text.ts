@@ -48,7 +48,7 @@ export function buildDeclineText(input: DeclineInput): string {
 
 /** Formulierung fuer eine uebersprungene Sparte. */
 export function buildSkippedText(topicName: string, date: string): string {
-  return `Die Sparte ${topicName} wurde im Gespräch vom ${date} nicht behandelt.`;
+  return `Die Sparte ${topicName} wurde im Gespräch vom ${date} nicht thematisiert.`;
 }
 
 export function buildFollowUpText(

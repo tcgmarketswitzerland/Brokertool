@@ -139,7 +139,7 @@ export function buildSummary(input: SummaryInput): SummaryDocument {
         // eine Formulierung, die nach Beratung klingt, schadet dem Berater
         // mehr als die Wahrheit.
         outcomeLabel: wasSkipped
-          ? 'Nicht behandelt'
+          ? 'Nicht thematisiert'
           : topic.outcome
             ? OUTCOME_LABEL[topic.outcome]
             : 'Offen',

@@ -4,7 +4,10 @@ import { useId } from 'react';
 import { EyeOff, Users } from 'lucide-react';
 import { TopicIcon } from '@/components/ui';
 import { cn } from '@/lib/cn';
-import { COVERAGE_LABEL, COVERAGE_STATES, OUTCOMES, OUTCOME_LABEL } from '@/domain/advice/status';
+import {
+  COVERAGE_LABEL, COVERAGE_STATES, OUTCOME_LABEL, SELECTABLE_OUTCOMES,
+} from '@/domain/advice/status';
+import type { Outcome } from '@/domain/advice/status';
 import type { CommandPayload } from '@/domain/advice/commands';
 import type { NoteState, TopicState } from '@/domain/advice/session-state';
 
@@ -47,7 +50,7 @@ function Choice({
   );
 }
 
-const OUTCOME_COLOR: Partial<Record<(typeof OUTCOMES)[number], string>> = {
+const OUTCOME_COLOR: Partial<Record<Outcome, string>> = {
   NO_ACTION_NEEDED: 'var(--status-no-action)',
   ACTION_REQUIRED: 'var(--status-action)',
   OFFER_REQUESTED: 'var(--status-action)',
@@ -119,7 +122,7 @@ export function TopicDetail({
           Entscheidung des Kunden
         </legend>
         <div role="radiogroup" aria-label="Entscheidung des Kunden" className="grid gap-2 sm:grid-cols-2">
-          {OUTCOMES.map((o) => (
+          {SELECTABLE_OUTCOMES.map((o) => (
             <Choice key={o} checked={topic.outcome === o} color={OUTCOME_COLOR[o]}
                     onClick={() => onCommand({
                       type: 'TOPIC_SET_OUTCOME',

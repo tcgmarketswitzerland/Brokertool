@@ -37,3 +37,33 @@ export function TopicIcon({
   const Icon = ICONS[name as TopicIconName] ?? Shapes;
   return <Icon aria-hidden className={cn('size-4', className)} strokeWidth={1.9} />;
 }
+
+/**
+ * Dasselbe Symbol innerhalb eines SVG, an einer Koordinate verankert.
+ *
+ * Ein verschachteltes <svg> statt CSS-Groessen: im Rad steht das Symbol an
+ * einer berechneten Stelle, und Groessenangaben in Prozent oder rem haetten
+ * dort keinen Bezugsrahmen.
+ */
+export function TopicGlyph({
+  name, x, y, size = 26, strokeWidth = 1.7,
+}: {
+  name: string | null | undefined;
+  /** Mittelpunkt, nicht obere linke Ecke - so rechnet das Rad. */
+  x: number;
+  y: number;
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const Icon = ICONS[name as TopicIconName] ?? Shapes;
+  return (
+    <Icon
+      aria-hidden
+      x={x - size / 2}
+      y={y - size / 2}
+      width={size}
+      height={size}
+      strokeWidth={strokeWidth}
+    />
+  );
+}

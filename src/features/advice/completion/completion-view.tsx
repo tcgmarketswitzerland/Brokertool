@@ -31,12 +31,14 @@ function dueLabel(days: number | null): string {
  * Unterschied zwischen einem Werkzeug und einem weiteren Formular.
  */
 export function CompletionView({
-  sessionId, document, suggestions, blockers,
+  sessionId, document, suggestions, untouched, blocked,
 }: {
   sessionId: string;
   document: SummaryDocument;
   suggestions: readonly SuggestedTask[];
-  blockers: readonly string[];
+  /** Sparten, die als "nicht thematisiert" ins Protokoll gehen. */
+  untouched: readonly string[];
+  blocked: boolean;
 }) {
   const [accepted, setAccepted] = useState<ReadonlySet<string>>(
     () => new Set(suggestions.map((s) => s.key)),
@@ -51,8 +53,6 @@ export function CompletionView({
       return next;
     });
   }
-
-  const blocked = blockers.length > 0;
 
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-6 px-5 py-6">
@@ -69,17 +69,25 @@ export function CompletionView({
       </div>
 
       {blocked ? (
-        <Alert tone="warning" title={
-          blockers.length === 1
-            ? 'Eine Pflichtsparte hat noch kein Ergebnis'
-            : `${blockers.length} Pflichtsparten haben noch kein Ergebnis`
+        <Alert tone="warning" title="Noch keine Sparte besprochen">
+          Eine Beratung ohne eine einzige besprochene Sparte lässt sich nicht abschliessen —
+          ihr Protokoll würde nichts belegen.
+        </Alert>
+      ) : null}
+
+      {untouched.length > 0 ? (
+        <Alert tone="info" title={
+          untouched.length === 1
+            ? 'Eine Sparte wird als nicht thematisiert festgehalten'
+            : `${untouched.length} Sparten werden als nicht thematisiert festgehalten`
         }>
           <p className="mb-2">
-            Jede Sparte braucht ein Ergebnis — auch „Kunde möchte keine Beratung“. Genau
-            das macht später nachvollziehbar, dass nichts vergessen wurde.
+            Sie verschwinden nicht aus dem Protokoll — dort steht zu jeder der Satz, dass sie
+            im Gespräch nicht behandelt wurde. Das ist ehrlicher als eine Lücke und schützt Sie
+            besser als eine Formulierung, die nach Beratung klingt.
           </p>
           <ul className="grid gap-1">
-            {blockers.map((name) => (
+            {untouched.map((name) => (
               <li key={name} className="flex items-center gap-1.5">
                 <AlertTriangle aria-hidden className="size-3.5 shrink-0" />{name}
               </li>

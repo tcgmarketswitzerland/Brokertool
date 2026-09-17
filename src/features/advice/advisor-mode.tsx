@@ -45,6 +45,7 @@ export function AdvisorMode({
         label: topicNames[t.topicId] ?? t.topicId,
         color: meta.color,
         icon: meta.icon,
+        topicIcon: t.icon,
         statusLabel: meta.label,
         isRequired: t.isRequired,
       };

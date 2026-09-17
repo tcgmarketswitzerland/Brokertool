@@ -66,32 +66,56 @@ beforeAll(async () => {
 
 afterAll(async () => { await client?.end(); });
 
-describe('Abschluss verlangt ein Ergebnis je Pflichtsparte', () => {
-  it('verweigert den Abschluss, solange Pflichtsparten offen sind', async () => {
+describe('Abschluss - eine Sparte genuegt, der Rest wird festgehalten', () => {
+  it('verweigert den Abschluss, solange keine einzige Sparte ein Ergebnis hat', async () => {
+    // Ein Protokoll ohne ein einziges Ergebnis belegt nichts.
     const sessionId = await newSession();
     await expect(asRole('ADVISOR', ADVISOR, () =>
       client.query('select complete_advice_session($1, $2::jsonb) as id',
         [sessionId, JSON.stringify(DOC)])))
-      .rejects.toThrow(/Pflichtbereiche offen/);
+      .rejects.toThrow(/Mindestens eine Sparte/);
   });
 
-  it('nennt die Zahl der offenen Pflichtsparten', async () => {
-    // Elf Pflichtsparten, eine davon besprochen - es muessen zehn bleiben.
+  it('schliesst ab, sobald eine Sparte ein Ergebnis hat', async () => {
+    // Der echte Fall: der Kunde kommt wegen einer Sparte und hat eine
+    // Stunde Zeit.
     const sessionId = await newSession();
     await client.query(
       `update advice_session_topics
-          set progress_status='DISCUSSED', outcome='NO_ACTION_NEEDED', discussed_at=now()
+          set progress_status='DISCUSSED', outcome='OFFER_REQUESTED', discussed_at=now()
         where id = (select id from advice_session_topics where session_id = $1
                      order by display_order limit 1)`, [sessionId]);
-    await expect(asRole('ADVISOR', ADVISOR, () =>
-      client.query('select complete_advice_session($1, $2::jsonb)',
-        [sessionId, JSON.stringify(DOC)])))
-      .rejects.toThrow(/noch 10 Pflichtbereiche/);
+
+    const id = await asRole('ADVISOR', ADVISOR, async () =>
+      (await client.query('select complete_advice_session($1, $2::jsonb) as id',
+        [sessionId, JSON.stringify(DOC)])).rows[0].id);
+    expect(id).toBeDefined();
   });
 
-  it('laesst eine ausdruecklich uebersprungene Sparte durchgehen', async () => {
-    // Uebersprungen ist eine bewusste Entscheidung des Beraters und damit
-    // etwas anderes als "vergessen". Im Protokoll steht sie als solche.
+  it('haelt jede unberuehrte Sparte als "nicht thematisiert" fest', async () => {
+    // Der Kern der Regel: keine Luecke im Protokoll, sondern ein Satz.
+    // Eine Luecke muss man spaeter erklaeren, einen Satz nicht.
+    const sessionId = await newSession();
+    await client.query(
+      `update advice_session_topics
+          set progress_status='DISCUSSED', outcome='OFFER_REQUESTED', discussed_at=now()
+        where id = (select id from advice_session_topics where session_id = $1
+                     order by display_order limit 1)`, [sessionId]);
+    await asRole('ADVISOR', ADVISOR, () =>
+      client.query('select complete_advice_session($1, $2::jsonb)',
+        [sessionId, JSON.stringify(DOC)]));
+
+    const { rows } = await client.query(
+      `select progress_status, count(*)::int as n
+         from advice_session_topics where session_id = $1
+        group by progress_status order by 1`, [sessionId]);
+    expect(rows).toEqual([
+      { progress_status: 'DISCUSSED', n: 1 },
+      { progress_status: 'SKIPPED', n: 10 },
+    ]);
+  });
+
+  it('laesst eine ausdruecklich uebersprungene Sparte unveraendert', async () => {
     const sessionId = await newSession();
     await settleAll(sessionId);
     await client.query(
@@ -102,19 +126,6 @@ describe('Abschluss verlangt ein Ergebnis je Pflichtsparte', () => {
       (await client.query('select complete_advice_session($1, $2::jsonb) as id',
         [sessionId, JSON.stringify(DOC)])).rows[0].id);
     expect(id).toBeDefined();
-  });
-
-  it('schliesst ab, wenn alle Pflichtsparten ein Ergebnis haben', async () => {
-    const sessionId = await newSession();
-    await settleAll(sessionId);
-    await asRole('ADVISOR', ADVISOR, () =>
-      client.query('select complete_advice_session($1, $2::jsonb)',
-        [sessionId, JSON.stringify(DOC)]));
-
-    const { rows } = await client.query(
-      'select status, completed_at from advice_sessions where id = $1', [sessionId]);
-    expect(rows[0].status).toBe('COMPLETED');
-    expect(rows[0].completed_at).not.toBeNull();
   });
 });
 

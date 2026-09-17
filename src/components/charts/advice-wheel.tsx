@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { cn } from '@/lib/cn';
+import { TopicGlyph } from '@/components/ui';
 
 /**
  * Beratungsrad.
@@ -19,7 +20,10 @@ export type WheelSegment = {
   readonly id: string;
   readonly label: string;
   readonly color: string;
+  /** Statuszeichen (Haken, Ausrufezeichen, ...). */
   readonly icon: string;
+  /** Symbol der Sparte aus dem Katalog - Sofa, Auto, Waage. */
+  readonly topicIcon: string | null;
   readonly statusLabel: string;
   readonly isRequired: boolean;
 };
@@ -40,6 +44,38 @@ function polar(angle: number, radius: number): [number, number] {
   return [CX + radius * Math.cos(angle), CY + radius * Math.sin(angle)];
 }
 
+
+/**
+ * Zusammensetzungen wie "Motorfahrzeugversicherung" haben keine Luecke, an
+ * der sich umbrechen liesse. Ungetrennt ragen sie aus dem Zeichenbereich
+ * und werden am Rand abgeschnitten - ausgerechnet bei den Sparten mit den
+ * laengsten Namen.
+ *
+ * Getrennt wird an der Fuge des zusammengesetzten Wortes, nicht in der
+ * Mitte: "Privathaft-pflicht" liest sich, "Privathaf-tpflicht" nicht. Die
+ * Liste deckt die Sparten ab, die es gibt; alles andere faellt auf die
+ * Mitte zurueck, was selten und dann immer noch besser als abgeschnitten
+ * ist.
+ */
+const COMPOUND_PARTS = [
+  'versicherung', 'pflicht', 'schutz', 'kasse', 'vorsorge', 'analyse',
+] as const;
+
+function splitCompound(word: string, max: number): string[] {
+  if (word.length <= max) return [word];
+
+  for (const part of COMPOUND_PARTS) {
+    const at = word.toLowerCase().lastIndexOf(part);
+    // Mindestens vier Zeichen davor, sonst entsteht ein Stummel.
+    if (at >= 4 && at + part.length === word.length) {
+      return [`${word.slice(0, at)}-`, word.slice(at)];
+    }
+  }
+
+  const cut = Math.ceil(word.length / 2);
+  return [`${word.slice(0, cut)}-`, word.slice(cut)];
+}
+
 /**
  * Lange Spartennamen auf hoechstens zwei Zeilen umbrechen. "Vorsorge und
  * Pensionierung" passt sonst nicht in den Rand und ueberlagert das
@@ -47,15 +83,7 @@ function polar(angle: number, radius: number): [number, number] {
  */
 function wrap(label: string, max = 16): string[] {
   if (label.length <= max) return [label];
-  // Zusammensetzungen wie "Motorfahrzeugversicherung" haben keine Luecke,
-  // an der sich umbrechen liesse. Ungetrennt ragen sie aus dem
-  // Zeichenbereich und werden am Rand abgeschnitten - ausgerechnet bei den
-  // Sparten mit den laengsten Namen.
-  const words = label.split(' ').flatMap((word) => {
-    if (word.length <= max) return [word];
-    const cut = Math.ceil(word.length / 2);
-    return [`${word.slice(0, cut)}-`, word.slice(cut)];
-  });
+  const words = label.split(' ').flatMap((word) => splitCompound(word, max));
   const lines: string[] = [];
   let current = '';
 
@@ -91,7 +119,9 @@ function segmentPath(start: number, end: number): string {
 }
 
 /** Kleine Symbole als Pfade — ein Icon-Paket im SVG waere hier Ballast. */
-function Glyph({ icon, x, y }: { icon: string; x: number; y: number }) {
+function Glyph({ icon, x, y, scale = 1 }: {
+  icon: string; x: number; y: number; scale?: number;
+}) {
   const common = {
     stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const, fill: 'none',
@@ -105,7 +135,11 @@ function Glyph({ icon, x, y }: { icon: string; x: number; y: number }) {
     'circle-dot': <><circle cx="0" cy="0" r="4.5" {...common} /><circle cx="0" cy="0" r="1.6" fill="currentColor" /></>,
     'circle-dashed': <circle cx="0" cy="0" r="4.5" {...common} strokeDasharray="2.2 2.2" />,
   };
-  return <g transform={`translate(${x} ${y})`}>{shapes[icon] ?? shapes['circle-dashed']}</g>;
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      {shapes[icon] ?? shapes['circle-dashed']}
+    </g>
+  );
 }
 
 export function AdviceWheel({
@@ -146,7 +180,9 @@ export function AdviceWheel({
         const start = index * step - Math.PI / 2 + GAP / 2;
         const end = (index + 1) * step - Math.PI / 2 - GAP / 2;
         const middle = (start + end) / 2;
-        const [gx, gy] = polar(middle, (OUTER + INNER) / 2);
+        const [gx, gy] = polar(middle, (OUTER + INNER) / 2 - 5);
+        // Statuszeichen dicht am Aussenrand, innerhalb des Segments.
+        const [sx, sy] = polar(middle, OUTER - 15);
         const [lx, ly] = polar(middle, LABEL_R);
         const active = segment.id === activeId;
         // Rechts vom Mittelpunkt linksbuendig, links davon rechtsbuendig -
@@ -186,9 +222,17 @@ export function AdviceWheel({
                 active ? 'opacity-100' : 'opacity-90 hover:opacity-100',
               )}
             />
-            {/* Symbol zusaetzlich zur Farbe: siehe Analyse 1.7 */}
+            {/* Im Segment steht die Sparte, nicht der Status. Das Rad ist
+                das Element, auf das der Kunde schaut - ein Haken sagt ihm
+                nichts, ein Sofa erkennt er sofort. Der Status bleibt
+                zusaetzlich zur Farbe als kleines Zeichen am Aussenrand
+                erhalten: Farbe allein traegt keine Bedeutung fuer
+                Farbfehlsichtige (Analyse 1.7). */}
             <g style={{ color: 'var(--color-surface)' }} className="pointer-events-none">
-              <Glyph icon={segment.icon} x={gx} y={gy} />
+              <TopicGlyph name={segment.topicIcon} x={gx} y={gy} size={26} />
+              <circle cx={sx} cy={sy} r={8} fill={segment.color} />
+              <circle cx={sx} cy={sy} r={8} fill="var(--color-surface)" fillOpacity={0.16} />
+              <Glyph icon={segment.icon} x={sx} y={sy} scale={0.72} />
             </g>
 
             <text
