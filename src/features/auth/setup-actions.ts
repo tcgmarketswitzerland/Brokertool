@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { logger, safeId } from '@/lib/logger';
 import type { AuthState } from './schemas';
+import { sessionState } from './bootstrap';
 
 const schema = z.object({
   organizationName: z.string().trim().min(2, 'Bitte den Firmennamen angeben.').max(200),
@@ -37,6 +38,15 @@ export async function createOrganization(
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect('/anmelden');
+
+  // Zweite Pruefung kurz vor dem Anlegen. Sie kostet eine Abfrage und
+  // verhindert den Fall, in dem jemand mit bestehender Firma dieses
+  // Formular sieht und sich dabei eine zweite anlegt - Daten in der einen,
+  // Anmeldung in der anderen.
+  const state = await sessionState();
+  if (state.kind === 'stale_token') return refreshSession();
+  if (state.kind === 'unknown') return { status: 'error', message: state.message };
+  if (state.kind === 'ready') redirect('/dashboard');
 
   const { error } = await supabase.rpc('create_organization', {
     p_name: parsed.data.organizationName,

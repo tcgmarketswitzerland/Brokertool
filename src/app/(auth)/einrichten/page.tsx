@@ -25,6 +25,30 @@ export default async function SetupPage() {
 
   const metadata = auth.user.user_metadata as { full_name?: string } | null;
 
+  // Zuerst der Fall, in dem die Datenbank nicht antworten konnte. Wer hier
+  // ein Formular saehe, legte eine Firma an, die er vielleicht schon hat.
+  if (state.kind === 'unknown') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Die Einrichtung ist unvollständig</CardTitle>
+          <CardDescription>
+            Ihr Konto ist in Ordnung. Die Datenbank kann gerade nicht beantworten, zu welcher
+            Firma Sie gehören.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Alert tone="danger" title="Was die Datenbank meldet">
+            {state.message}
+          </Alert>
+          <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
+            Ist das behoben, genügt ein Neuladen dieser Seite.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (state.kind === 'needs_organization') {
     return (
       <Card>
