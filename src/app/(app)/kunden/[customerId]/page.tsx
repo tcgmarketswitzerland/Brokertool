@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import {
-  Alert, Badge, Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Alert, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui';
 import { StartSessionButton } from '@/features/advice/start-session-button';
 import { CUSTOMER_TYPE_LABEL } from '@/domain/customer/types';
@@ -122,6 +122,24 @@ export default async function CustomerPage({
       <Card>
         <CardHeader><CardTitle>Einstellungen</CardTitle></CardHeader>
         <CardContent><CustomerSettingsForm customer={customer} /></CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Datenschutz</CardTitle>
+          <CardDescription>
+            Verlangt dieser Kunde Auskunft über seine Daten, laden Sie hier alles herunter,
+            was über ihn gespeichert ist — einschliesslich interner Notizen. Das schreibt
+            das Datenschutzgesetz so vor (Art. 25 revDSG).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="secondary">
+            <a href={`/kunden/${customer.id}/auskunft`} download>
+              <Download aria-hidden />Auskunft herunterladen
+            </a>
+          </Button>
+        </CardContent>
       </Card>
     </div>
   );

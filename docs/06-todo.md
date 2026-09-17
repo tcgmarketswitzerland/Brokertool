@@ -30,6 +30,17 @@ Beratung führen → abschliessen → Folgeaufgaben bestätigen → unterschreib
 
 ## A — Jetzt: zwei Schritte, dann kannst du testen
 
+### A0 · Ab jetzt: Migrationen laufen von selbst
+
+Das Kopieren in den SQL Editor hat ausgedient. Einmalig einzurichten, danach nie wieder:
+**`docs/09-umgebungen.md`** führt Schritt für Schritt durch.
+
+Kurz: ein zweites Supabase-Projekt für Stage, zwei GitHub-Umgebungen mit je einem Secret
+`DATABASE_URL`, bei `production` dich als Freigeber eintragen. Danach migriert Stage beim Push
+von selbst, und die Produktion auf Knopfdruck mit Freigabe.
+
+---
+
 ### A1 · Die neuen Migrationen einspielen  ⚠️ blockiert alles Neue
 
 Produktiv laufen die Migrationen 0001 bis 0017. Alles aus Phase 5 bis 7 — Aufgaben, Abschluss,
@@ -136,10 +147,19 @@ Nicht vor dem Testen nötig, aber **bevor echte Kundendaten erfasst werden**.
 - [ ] Textbausteine prüfen lassen, besonders den Ablehnungstext
 - [ ] Auftragsverarbeitungsvertrag (revDSG Art. 9) mit dir als Verantwortlichem
 - [ ] Allgemeine Geschäftsbedingungen und Datenschutzerklärung
+- [ ] **Nimm `docs/10-bearbeitungsverzeichnis.md` mit.** Der technische Teil ist fertig; die
+      offenen Punkte sind als solche markiert. Besonders: das System bearbeitet besonders
+      schützenswerte Personendaten (Gesundheit, wirtschaftliche Lage) — daraus folgt womöglich
+      eine Datenschutz-Folgenabschätzung nach Art. 22
 
 ### C2 · Verzeichnis der Bearbeitungstätigkeiten
-- [ ] revDSG Art. 12 — ich liefere dir die technische Grundlage dazu, die fachliche Beschreibung
-      musst du beisteuern
+- [x] Technischer Teil geschrieben: `docs/10-bearbeitungsverzeichnis.md`
+- [ ] Rechtsgrundlagen und Aufbewahrungsfristen ergänzen (Anwalt)
+
+### C5 · Aufbewahrungsfrist festlegen  ⚠️ blockiert das Löschkonzept
+- [ ] Wie lange müssen Beratungsprotokolle aufbewahrt werden? Solange das offen ist, löscht das
+      System gar nichts endgültig — ich baue das erst, wenn die Frist feststeht. Lieber kein
+      Löschen als ein falsches
 
 ### C3 · Unterauftragnehmer benennen
 Für die Datenschutzerklärung: Supabase (Datenbank, Zürich), Vercel (Anwendung, Frankfurt).
