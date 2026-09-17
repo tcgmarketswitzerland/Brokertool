@@ -4,12 +4,13 @@ import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, ArrowLeft, Check, PenLine, User, UserRound } from 'lucide-react';
 import {
-  Alert, Badge, Button, Card, CardHeader, CardTitle, Input, TopicIcon,
+  Alert, Badge, Button, Card, CardDescription, CardHeader, CardTitle, Input, TopicIcon,
 } from '@/components/ui';
 import { formatCHF, rappen } from '@/domain/shared/money';
 import { TASK_OWNER_LABEL } from '@/domain/task/types';
 import type { SuggestedTask } from '@/domain/task/suggestions';
 import type { SummaryDocument } from '@/domain/advice/summary';
+import { topicNarrative } from '@/domain/advice/protocol';
 import { completeSession, type CompleteState } from './actions';
 import { SignaturePad } from './signature-pad';
 
@@ -106,31 +107,40 @@ export function CompletionView({
       <Card>
         <CardHeader><CardTitle>Das kommt ins Protokoll</CardTitle></CardHeader>
         <ul className="divide-y divide-line">
-          {document.topics.map((topic) => (
-            <li key={topic.slug} className="grid gap-1 px-5 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="flex items-center gap-2 font-medium">
-                  <TopicIcon name={topic.icon} className="size-4 text-ink-muted" />
-                  {topic.name}
-                </span>
-                <Badge tone={
-                  topic.outcome === 'NO_ACTION_NEEDED' ? 'success'
-                    : topic.wasSkipped || topic.outcome === null ? 'neutral'
-                      : topic.outcome === 'CLIENT_DECLINED' ? 'warning' : 'accent'
-                }>
-                  {topic.outcomeLabel}
-                </Badge>
-              </div>
-              {topic.note ? (
-                <p className="text-[0.8125rem] leading-relaxed text-ink-muted">{topic.note}</p>
-              ) : null}
-              {topic.existingPolicies.length > 0 ? (
-                <p className="tabular text-[0.8125rem] text-ink-subtle">
-                  {topic.existingPolicies.map((p) => p.insurerName).join(', ')}
-                </p>
-              ) : null}
-            </li>
-          ))}
+          {document.topics.map((topic) => {
+            // Derselbe Text wie im PDF, aus derselben Funktion. Eine
+            // Vorschau, die etwas anderes zeigt als das Ergebnis, waere
+            // schlimmer als gar keine - gerade beim Ablehnungssatz, den
+            // der Berater hier zum letzten Mal vor dem Einfrieren sieht.
+            const narrative = topicNarrative(topic, document);
+            return (
+              <li key={topic.slug} className="grid gap-1 px-5 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 font-medium">
+                    <TopicIcon name={topic.icon} className="size-4 text-ink-muted" />
+                    {topic.name}
+                  </span>
+                  <Badge tone={
+                    topic.outcome === 'NO_ACTION_NEEDED' ? 'success'
+                      : topic.wasSkipped || topic.outcome === null ? 'neutral'
+                        : topic.outcome === 'CLIENT_DECLINED' ? 'warning' : 'accent'
+                  }>
+                    {topic.outcomeLabel}
+                  </Badge>
+                </div>
+                {topic.existingPolicies.length > 0 ? (
+                  <p className="tabular text-[0.8125rem] text-ink-subtle">
+                    Bestehende Lösung: {topic.existingPolicies.map((p) => p.insurerName).join(', ')}
+                  </p>
+                ) : null}
+                {narrative ? (
+                  <p className="whitespace-pre-line text-[0.8125rem] leading-relaxed text-ink-muted">
+                    {narrative}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
         {document.totalAnnualPremiumCents > 0 ? (
           <p className="tabular border-t border-line px-5 py-3 text-[0.8125rem] text-ink-muted">
@@ -148,6 +158,10 @@ export function CompletionView({
         <Card>
           <CardHeader>
             <CardTitle>Folgeaufgaben</CardTitle>
+            <CardDescription>
+              Aus den Ergebnissen abgeleitet und vorausgewählt. Abwählen, was nicht bleiben
+              soll — der Rest wird mit dem Abschluss angelegt und steht im Protokoll.
+            </CardDescription>
           </CardHeader>
 
           {suggestions.length === 0 ? (
