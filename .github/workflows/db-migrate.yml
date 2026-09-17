@@ -1,50 +1,87 @@
 name: Datenbankmigration
 
-# Bewusst nur manuell ausloesbar. Eine Schemaaenderung auf der produktiven
-# Datenbank ist eine Entscheidung, kein Nebeneffekt eines Pushes
-# (Konzeptpunkt 34).
+# Zwei Wege, einer je Umgebung:
+#
+#   Stage       laeuft von selbst, sobald etwas auf den Zweig "stage"
+#               gepusht wird. Dort soll ausprobiert werden, und eine
+#               Migration, die einen Handgriff braucht, wird nicht
+#               ausprobiert.
+#
+#   Produktiv   nur von Hand, mit Bestaetigung und - sofern in den
+#               Umgebungsregeln hinterlegt - mit Freigabe. Eine
+#               Schemaaenderung auf der produktiven Datenbank ist eine
+#               Entscheidung, kein Nebeneffekt eines Pushes
+#               (Konzeptpunkt 34).
+#
+# Beide holen DATABASE_URL aus der jeweiligen GitHub-Umgebung. Derselbe
+# Name, zwei Werte - so kann kein Lauf versehentlich auf der falschen
+# Datenbank landen.
+
 on:
+  push:
+    branches: [stage]
+    paths: ['supabase/migrations/**']
   workflow_dispatch:
     inputs:
-      bestaetigung:
-        description: 'Zum Bestaetigen "migrieren" eintippen'
+      umgebung:
+        description: 'Welche Datenbank'
         required: true
+        type: choice
+        options: [stage, produktion]
+      aktion:
+        description: 'status zeigt nur an, up spielt ein'
+        required: true
+        default: status
+        type: choice
+        options: [status, up]
+      bestaetigung:
+        description: 'Fuer "up" auf der Produktion: "migrieren" eintippen'
+        required: false
         type: string
 
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    environment: production      # erlaubt spaeter eine Freigabe vor dem Lauf
-
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    environment: ${{ github.event_name == 'push' && 'stage' || inputs.umgebung }}
 
     steps:
-      - name: Bestaetigung pruefen
-        if: inputs.bestaetigung != 'migrieren'
+      - name: Bestaetigung fuer die Produktion pruefen
+        if: >-
+          github.event_name == 'workflow_dispatch'
+          && inputs.umgebung == 'produktion'
+          && inputs.aktion == 'up'
+          && inputs.bestaetigung != 'migrieren'
         run: |
-          echo "Abgebrochen: Bestaetigung fehlt oder falsch."
+          echo "Abgebrochen: Bestaetigung fehlt oder stimmt nicht."
           exit 1
 
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          version: latest
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
-      - name: Projekt verbinden
-        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+      # Zuerst immer anzeigen, was ansteht - auch beim Einspielen. Das
+      # Protokoll des Laufs soll spaeter beantworten, was passiert ist.
+      - name: Stand anzeigen
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/migrate.mjs status
 
-      - name: Ausstehende Migrationen anzeigen
-        run: supabase migration list
+      # Jede Migration ruft am Ende apply_tenant_rls() und
+      # assert_rls_complete() auf. Eine Migration, die eine Mandantentabelle
+      # anlegt und sie nicht absichert, bricht den Lauf hier ab - in jeder
+      # Umgebung, auch wenn sie jemand von Hand einspielt.
+      - name: Migrationen einspielen
+        if: github.event_name == 'push' || inputs.aktion == 'up'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/migrate.mjs up
 
-      # Die Absicherung braucht keinen eigenen Schritt mehr: jede Migration
-      # ruft am Ende apply_tenant_rls() und assert_rls_complete() auf. Eine
-      # Migration, die eine Mandantentabelle anlegt und sie nicht absichert,
-      # schlaegt damit hier fehl - und zwar in jeder Umgebung, auch wenn sie
-      # jemand von Hand einspielt.
-      - name: Migrationen anwenden
-        run: supabase db push
-
-      - name: Ergebnis
-        run: supabase migration list
+      - name: Stand danach
+        if: github.event_name == 'push' || inputs.aktion == 'up'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/migrate.mjs status

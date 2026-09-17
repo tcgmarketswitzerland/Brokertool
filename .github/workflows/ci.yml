@@ -50,3 +50,16 @@ jobs:
         run: pnpm test:db
       - name: Build
         run: pnpm build
+
+      # Der Laeufer selbst gegen eine leere Datenbank: nur so faellt vor dem
+      # Einspielen auf, wenn eine Migration in frischer Reihenfolge nicht
+      # durchlaeuft. Die Datenbanktests bauen zwar auch von Null auf, aber
+      # ohne das Verzeichnis und ohne den Laeufer.
+      - name: Migrationslauf von Null
+        env:
+          DATABASE_URL: postgres://postgres@localhost:5432/migrate_ci
+        run: |
+          psql "postgres://postgres@localhost:5432/postgres" -c 'create database migrate_ci'
+          psql "$DATABASE_URL" -f tests/db/helpers/supabase-stub.sql
+          node scripts/migrate.mjs up
+          node scripts/migrate.mjs up   # zweiter Lauf muss folgenlos bleiben
