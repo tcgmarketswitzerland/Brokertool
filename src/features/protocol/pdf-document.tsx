@@ -93,7 +93,7 @@ export function ProtocolDocument({
   document: SummaryDocument;
   contentHash: string;
   /** Unterschrift des Kunden, falls erfasst. Ohne sie bleibt die Linie leer. */
-  signature?: { signerName: string; dataUrl: string | null } | undefined;
+  signature?: { signerName: string; dataUrl: string } | undefined;
 }) {
   const overview = [
     `${document.counts.discussed} von ${document.counts.total} Sparten besprochen`,
@@ -190,7 +190,7 @@ export function ProtocolDocument({
 
         <View style={s.signRow}>
           <View style={s.signBox}>
-            {signature?.dataUrl
+            {signature
               // Image stammt aus @react-pdf/renderer, nicht aus dem DOM -
               // ein alt-Attribut gaebe es im PDF nicht, der Name steht
               // ohnehin darunter.

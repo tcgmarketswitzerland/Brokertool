@@ -1,10 +1,19 @@
 -- Phase 5 - Aufgaben fuer Kunde und Berater (Konzeptpunkt 11)
 
-create type task_owner_type as enum ('CUSTOMER','ADVISOR');
-create type task_status     as enum ('OPEN','IN_PROGRESS','DONE','CANCELLED');
-create type task_priority   as enum ('LOW','NORMAL','HIGH');
+-- Mit Schutz gegen erneutes Einspielen: die Migrationen laufen im
+-- Supabase SQL Editor von Hand, und ein abgebrochener Durchgang darf nicht
+-- dazu fuehren, dass der naechste an einem bereits angelegten Typ scheitert.
+do $$ begin
+  create type task_owner_type as enum ('CUSTOMER','ADVISOR');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type task_status as enum ('OPEN','IN_PROGRESS','DONE','CANCELLED');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type task_priority as enum ('LOW','NORMAL','HIGH');
+exception when duplicate_object then null; end $$;
 
-create table tasks (
+create table if not exists tasks (
   id                 uuid primary key default gen_random_uuid(),
   organization_id    uuid not null references organizations(id) on delete cascade,
   customer_id        uuid references customers(id) on delete cascade,
@@ -36,14 +45,16 @@ create table tasks (
     check (status <> 'DONE' or completed_at is not null)
 );
 
-create index tasks_open_by_due
+create index if not exists tasks_open_by_due
   on tasks (organization_id, due_date) where status in ('OPEN','IN_PROGRESS');
-create index tasks_session_idx on tasks (session_id);
-create index tasks_customer_idx on tasks (customer_id);
+create index if not exists tasks_session_idx on tasks (session_id);
+create index if not exists tasks_customer_idx on tasks (customer_id);
 
+drop trigger if exists trg_tasks_touch on tasks;
 create trigger trg_tasks_touch before update on tasks
   for each row execute function public.touch_updated_at();
 
+drop trigger if exists trg_audit_tasks on tasks;
 create trigger trg_audit_tasks
   after insert or update or delete on tasks
   for each row execute function public.audit_trigger();

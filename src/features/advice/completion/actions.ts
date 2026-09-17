@@ -127,7 +127,6 @@ export async function completeSession(
   // schlimmer als eine fehlende Unterschrift, die sich nachholen laesst.
   if (parsed.data.signature && snapshotId) {
     await storeSignature(supabase, {
-      organizationId: data.session.organizationId,
       sessionId,
       snapshotId: String(snapshotId),
       signerName: parsed.data.signerName || data.session.customerName,

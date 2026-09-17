@@ -31,6 +31,21 @@ begin
       left join public.advice_template_versions v on v.template_id = t.id
      where t.is_default
      group by t.id, t.organization_id
+     -- Nur, wenn die aktuelle Version nicht bereits alle Sparten als
+     -- Pflicht fuehrt. Sonst legte jedes erneute Einspielen eine weitere
+     -- Version an, und die Firma haette einen Stapel identischer Vorlagen.
+    having not exists (
+      select 1
+        from public.advice_template_versions cur
+       where cur.template_id = t.id
+         and cur.status = 'PUBLISHED'
+         and not exists (
+           select 1 from public.advice_template_topics tt
+            where tt.template_version_id = cur.id and not tt.is_required)
+         and (select count(*) from public.advice_template_topics tt
+               where tt.template_version_id = cur.id)
+             = (select count(*) from public.insurance_topics it
+                 where it.is_active and 'PRIVATE' = any (it.applicable_customer_types)))
   loop
     insert into public.advice_template_versions
       (organization_id, template_id, version, status)

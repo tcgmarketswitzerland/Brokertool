@@ -1,9 +1,12 @@
--- Brokertool - Migrationen 0018 bis 0021 in einer Datei
+-- Brokertool - Migrationen 0018 bis 0020 in einer Datei
 --
 -- Zum Einspielen im Supabase SQL Editor: alles markieren, einfuegen,
 -- ausfuehren. Die Datei ist die unveraenderte Aneinanderreihung der
--- einzelnen Migrationen - sie ersetzt sie nicht, sondern erspart
--- lediglich vier Durchgaenge.
+-- einzelnen Migrationen.
+--
+-- Sie laesst sich gefahrlos mehrfach ausfuehren: jeder Schritt prueft,
+-- ob er schon getan ist. Ein abgebrochener Durchgang ist damit kein
+-- Problem - einfach nochmal einspielen.
 --
 -- Erzeugt am 2026-09-17 aus supabase/migrations/.
 
@@ -45,6 +48,21 @@ begin
       left join public.advice_template_versions v on v.template_id = t.id
      where t.is_default
      group by t.id, t.organization_id
+     -- Nur, wenn die aktuelle Version nicht bereits alle Sparten als
+     -- Pflicht fuehrt. Sonst legte jedes erneute Einspielen eine weitere
+     -- Version an, und die Firma haette einen Stapel identischer Vorlagen.
+    having not exists (
+      select 1
+        from public.advice_template_versions cur
+       where cur.template_id = t.id
+         and cur.status = 'PUBLISHED'
+         and not exists (
+           select 1 from public.advice_template_topics tt
+            where tt.template_version_id = cur.id and not tt.is_required)
+         and (select count(*) from public.advice_template_topics tt
+               where tt.template_version_id = cur.id)
+             = (select count(*) from public.insurance_topics it
+                 where it.is_active and 'PRIVATE' = any (it.applicable_customer_types)))
   loop
     insert into public.advice_template_versions
       (organization_id, template_id, version, status)
@@ -73,11 +91,20 @@ select public.assert_rls_complete();
 
 -- Phase 5 - Aufgaben fuer Kunde und Berater (Konzeptpunkt 11)
 
-create type task_owner_type as enum ('CUSTOMER','ADVISOR');
-create type task_status     as enum ('OPEN','IN_PROGRESS','DONE','CANCELLED');
-create type task_priority   as enum ('LOW','NORMAL','HIGH');
+-- Mit Schutz gegen erneutes Einspielen: die Migrationen laufen im
+-- Supabase SQL Editor von Hand, und ein abgebrochener Durchgang darf nicht
+-- dazu fuehren, dass der naechste an einem bereits angelegten Typ scheitert.
+do $$ begin
+  create type task_owner_type as enum ('CUSTOMER','ADVISOR');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type task_status as enum ('OPEN','IN_PROGRESS','DONE','CANCELLED');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type task_priority as enum ('LOW','NORMAL','HIGH');
+exception when duplicate_object then null; end $$;
 
-create table tasks (
+create table if not exists tasks (
   id                 uuid primary key default gen_random_uuid(),
   organization_id    uuid not null references organizations(id) on delete cascade,
   customer_id        uuid references customers(id) on delete cascade,
@@ -109,14 +136,16 @@ create table tasks (
     check (status <> 'DONE' or completed_at is not null)
 );
 
-create index tasks_open_by_due
+create index if not exists tasks_open_by_due
   on tasks (organization_id, due_date) where status in ('OPEN','IN_PROGRESS');
-create index tasks_session_idx on tasks (session_id);
-create index tasks_customer_idx on tasks (customer_id);
+create index if not exists tasks_session_idx on tasks (session_id);
+create index if not exists tasks_customer_idx on tasks (customer_id);
 
+drop trigger if exists trg_tasks_touch on tasks;
 create trigger trg_tasks_touch before update on tasks
   for each row execute function public.touch_updated_at();
 
+drop trigger if exists trg_audit_tasks on tasks;
 create trigger trg_audit_tasks
   after insert or update or delete on tasks
   for each row execute function public.audit_trigger();
@@ -139,9 +168,11 @@ select public.assert_rls_complete();
 -- der Anwendung. Eine Nachvollziehbarkeit, die sich durch einen vergessenen
 -- Codepfad aushebeln laesst, ist keine.
 
-create type signature_kind as enum ('CUSTOMER','ADVISOR');
+do $$ begin
+  create type signature_kind as enum ('CUSTOMER','ADVISOR');
+exception when duplicate_object then null; end $$;
 
-create table advice_session_snapshots (
+create table if not exists advice_session_snapshots (
   id              uuid primary key default gen_random_uuid(),
   organization_id uuid not null references organizations(id) on delete cascade,
   session_id      uuid not null references advice_sessions(id) on delete cascade unique,
@@ -152,7 +183,7 @@ create table advice_session_snapshots (
   created_by      uuid references profiles(id) on delete set null
 );
 
-create table signatures (
+create table if not exists signatures (
   id               uuid primary key default gen_random_uuid(),
   organization_id  uuid not null references organizations(id) on delete cascade,
   session_id       uuid not null references advice_sessions(id) on delete cascade,
@@ -160,7 +191,25 @@ create table signatures (
   kind             signature_kind not null default 'CUSTOMER',
   signer_person_id uuid references customer_persons(id) on delete set null,
   signer_name      text not null,
-  storage_path     text not null,
+  -- Das Bild liegt hier und nicht im Objektspeicher.
+  --
+  -- Der erste Entwurf legte es in einen Supabase-Bucket. Die Begruendung -
+  -- Abfragen nicht aufblaehen, ablaufende URLs ausliefern - hielt der
+  -- Wirklichkeit nicht stand: die Spalte wird nur beim Erzeugen des PDF
+  -- gelesen, und ausgeliefert wird nie eine URL, sondern das fertige PDF
+  -- vom Server. Dafuer verlangte der Objektspeicher Policies auf
+  -- storage.objects, einer Tabelle, die in Supabase supabase_storage_admin
+  -- gehoert - im SQL Editor nicht anlegbar, also ein Handgriff im
+  -- Dashboard bei jeder Installation. Ein manueller Schritt an der
+  -- Produktionsdatenbank ist genau das, was dieses Projekt ausschliesst.
+  --
+  -- Base64 statt bytea, weil PostgREST bytea als Hex-Zeichenkette
+  -- durchreicht und der Umweg an zwei Stellen umgerechnet werden muesste.
+  -- Eine Unterschrift misst rund 40 KB; bei 200 Beratungen im Jahr sind
+  -- das 8 MB.
+  image_base64     text not null check (length(image_base64) between 100 and 2000000),
+  content_type     text not null default 'image/png'
+    check (content_type in ('image/png','image/jpeg','image/svg+xml')),
   signed_at        timestamptz not null default now(),
   -- Klartext, nicht gehasht: der einzige Zweck ist der Nachweis im
   -- Streitfall, und ein Hash waere dafuer wertlos. Begruendete Bearbeitung,
@@ -169,7 +218,7 @@ create table signatures (
   user_agent       text
 );
 
-create index signatures_session_idx on signatures (session_id);
+create index if not exists signatures_session_idx on signatures (session_id);
 
 -- Anfuegende Tabellen: eigener Policy-Satz, kein Update, kein Delete.
 alter table advice_session_snapshots enable row level security;
@@ -177,8 +226,10 @@ alter table advice_session_snapshots force  row level security;
 alter table advice_session_snapshots
   alter column organization_id set default public.auth_org_id();
 
+drop policy if exists snapshots_select on advice_session_snapshots;
 create policy snapshots_select on advice_session_snapshots for select to authenticated
   using (organization_id = public.auth_org_id());
+drop policy if exists snapshots_insert on advice_session_snapshots;
 create policy snapshots_insert on advice_session_snapshots for insert to authenticated
   with check (organization_id = public.auth_org_id()
               and public.has_permission('advice:complete'));
@@ -187,8 +238,10 @@ alter table signatures enable row level security;
 alter table signatures force  row level security;
 alter table signatures alter column organization_id set default public.auth_org_id();
 
+drop policy if exists signatures_select on signatures;
 create policy signatures_select on signatures for select to authenticated
   using (organization_id = public.auth_org_id());
+drop policy if exists signatures_insert on signatures;
 create policy signatures_insert on signatures for insert to authenticated
   with check (organization_id = public.auth_org_id()
               and public.has_permission('advice:sign'));
@@ -224,10 +277,13 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_freeze_session on advice_sessions;
 create trigger trg_freeze_session before update on advice_sessions
   for each row execute function public.prevent_completed_session_self_changes();
+drop trigger if exists trg_freeze_topics on advice_session_topics;
 create trigger trg_freeze_topics before update on advice_session_topics
   for each row execute function public.prevent_completed_session_changes();
+drop trigger if exists trg_freeze_notes on notes;
 create trigger trg_freeze_notes before update on notes
   for each row when (new.session_id is not null)
   execute function public.prevent_completed_session_changes();
@@ -236,6 +292,7 @@ create trigger trg_freeze_notes before update on notes
 -- eine Beratung wandert, veraendert deren Aussage genauso wie eine
 -- geaenderte. Waehrend des Gespraechs steht die Beratung auf IN_PROGRESS,
 -- der normale Weg bleibt also offen.
+drop trigger if exists trg_freeze_notes_insert on notes;
 create trigger trg_freeze_notes_insert before insert on notes
   for each row when (new.session_id is not null)
   execute function public.prevent_completed_session_changes();
@@ -295,46 +352,3 @@ $$;
 
 select public.apply_tenant_rls();
 select public.assert_rls_complete();
-
--- ========================================================================
--- 0021_signature_storage.sql
--- ========================================================================
-
--- Phase 6 - Unterschrift als Datei (ADR-001)
---
--- Die Unterschrift ist ein Bild und gehoert nicht in die Datenbank: als
--- base64 in einer Spalte blaeht sie jede Abfrage auf, die die Tabelle
--- anfasst, und laesst sich nicht mit einer ablaufenden URL ausliefern.
---
--- Der Pfad traegt die Mandantenkennung als erstes Segment. Das ist keine
--- Bequemlichkeit, sondern die einzige Angabe, an der die Storage-Policy
--- die Zugehoerigkeit pruefen kann - storage.objects hat keine
--- organization_id.
-
-insert into storage.buckets (id, name, public)
-values ('signatures', 'signatures', false)
-on conflict (id) do nothing;
-
-alter table storage.objects enable row level security;
-
-drop policy if exists signatures_read on storage.objects;
-create policy signatures_read on storage.objects for select to authenticated
-  using (
-    bucket_id = 'signatures'
-    and (storage.foldername(name))[1] = public.auth_org_id()::text
-  );
-
-drop policy if exists signatures_write on storage.objects;
-create policy signatures_write on storage.objects for insert to authenticated
-  with check (
-    bucket_id = 'signatures'
-    and (storage.foldername(name))[1] = public.auth_org_id()::text
-    and public.has_permission('advice:sign')
-  );
-
--- Kein Update, kein Delete: eine Unterschrift, die sich ueberschreiben
--- laesst, belegt nichts. Loeschen bleibt der Aufbewahrungsfrist
--- vorbehalten und laeuft ueber den Service-Schluessel.
-
-comment on policy signatures_read on storage.objects is
-  'Unterschriften nur innerhalb der eigenen Organisation lesbar (Pfadpraefix).';

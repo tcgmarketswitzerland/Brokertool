@@ -30,15 +30,17 @@ Beratung führen → abschliessen → Folgeaufgaben bestätigen → unterschreib
 
 ## A — Jetzt: zwei Schritte, dann kannst du testen
 
-### A1 · Die vier neuen Migrationen einspielen  ⚠️ blockiert alles Neue
+### A1 · Die drei neuen Migrationen einspielen  ⚠️ blockiert alles Neue
 
 Produktiv laufen die Migrationen 0001 bis 0017. Alles aus Phase 5 bis 7 — Aufgaben, Abschluss,
-Snapshot, Unterschrift — braucht 0018 bis 0021. **Ohne diesen Schritt siehst du die neuen Seiten,
+Snapshot, Unterschrift — braucht 0018 bis 0020. **Ohne diesen Schritt siehst du die neuen Seiten,
 aber jede Aktion darauf scheitert.**
 
 - [ ] Supabase → **SQL Editor** → neue Abfrage
-- [ ] Inhalt von `supabase/bundles/0018-0021.sql` einfügen und ausführen
-- [ ] Es muss ohne Fehler durchlaufen; die Datei prüft sich am Ende selbst
+- [ ] Inhalt von `supabase/bundles/0018-0020.sql` einfügen und ausführen
+
+Die Datei lässt sich **gefahrlos mehrfach ausführen** — jeder Schritt prüft, ob er schon getan
+ist. Der abgebrochene Versuch vom ersten Mal ist damit kein Problem.
 
 Was dabei passiert:
 
@@ -46,10 +48,18 @@ Was dabei passiert:
 |---|---|
 | 0018 | Alle elf Sparten werden Pflicht (neue Vorlagenversion je Firma) |
 | 0019 | Tabelle `tasks` für Aufgaben von Kunde und Berater |
-| 0020 | Snapshot, Unterschriftentabelle, Schreibschutz für abgeschlossene Beratungen |
-| 0021 | Privater Speicherort für Unterschriften samt Zugriffsregeln |
+| 0020 | Snapshot, Unterschrift, Schreibschutz für abgeschlossene Beratungen |
 
-Ich habe das Bundle gegen eine Datenbank im Stand 0017 durchgespielt — es läuft sauber durch.
+Geprüft gegen eine Datenbank im Stand 0017, dreimal hintereinander eingespielt — ohne Fehler und
+ohne doppelte Vorlagenversionen.
+
+> **Zur früheren Fehlermeldung „must be owner of table objects":** die stammte aus einer
+> Migration 0021, die einen Supabase-Speicherbereich für die Unterschriften anlegen wollte. Diese
+> Tabellen gehören in Supabase einer anderen Rolle, der SQL Editor darf sie nicht ändern — es
+> hätte einen Handgriff im Dashboard gebraucht. Ein manueller Eingriff an der
+> Produktionsdatenbank ist aber genau das, was dieses Projekt ausschliesst. Die Unterschrift
+> liegt jetzt in einer eigenen Tabelle, mit denselben Sicherheitsregeln wie alles andere.
+> 0021 gibt es nicht mehr.
 
 ### A2 · Access-Token-Hook prüfen
 
