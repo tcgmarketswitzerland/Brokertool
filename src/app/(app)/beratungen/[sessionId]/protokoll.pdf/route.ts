@@ -1,6 +1,7 @@
 import { renderToBuffer } from '@react-pdf/renderer';
 import { ProtocolDocument } from '@/features/protocol/pdf-document';
 import { getSignature, getSnapshot } from '@/features/protocol/queries';
+import { getOrganization } from '@/features/organization/queries';
 
 export const dynamic = 'force-dynamic';
 // @react-pdf/renderer braucht Node-APIs; im Edge-Runtime faellt es aus.
@@ -22,13 +23,21 @@ export async function GET(
   const snapshot = await getSnapshot(sessionId);
   if (!snapshot) return new Response('Nicht gefunden', { status: 404 });
 
-  const signature = await getSignature(sessionId);
+  const [signature, organization] = await Promise.all([
+    getSignature(sessionId), getOrganization(),
+  ]);
 
   const buffer = await renderToBuffer(
     ProtocolDocument({
       document: snapshot.document,
       contentHash: snapshot.contentHash,
       ...(signature ? { signature } : {}),
+      // Logo und Hausfarbe kommen aus dem heutigen Stand: sie sind
+      // Darstellung, nicht Inhalt. Der Inhalt liegt im Snapshot.
+      branding: {
+        logoDataUrl: organization?.logoDataUrl ?? null,
+        brandColor: organization?.brandColor ?? null,
+      },
     }),
   );
 

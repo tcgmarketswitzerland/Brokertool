@@ -1,5 +1,4 @@
 import 'server-only';
-import { createClient } from '@/lib/supabase/server';
 import { annualPremiumCents } from '@/domain/policy/types';
 import {
   buildSummary, type SummaryDocument, type SummaryInput, type SummaryInputTask,
@@ -9,6 +8,7 @@ import { suggestTasks, type SuggestedTask } from '@/domain/task/suggestions';
 import { listPolicies } from '@/features/policies/queries';
 import { getSession, type AdviceSession } from '@/features/advice/queries';
 import { getPensionForSummary } from '@/features/pension/queries';
+import { getOrganizationContact } from '@/features/organization/queries';
 
 export type CompletionData = {
   session: AdviceSession;
@@ -17,12 +17,6 @@ export type CompletionData = {
   /** Datum des Gespraechs als ISO-Tag - Grundlage aller Fristen. */
   sessionDate: string;
 };
-
-async function organizationName(): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase.from('organizations').select('name').limit(1).maybeSingle();
-  return data ? String(data.name) : '';
-}
 
 /**
  * Alles, was der Abschluss braucht - in einem Zug geladen.
@@ -39,8 +33,8 @@ export async function getCompletionData(
   const session = await getSession(sessionId);
   if (!session) return null;
 
-  const [policies, orgName, pension] = await Promise.all([
-    listPolicies(session.customerId), organizationName(),
+  const [policies, organization, pension] = await Promise.all([
+    listPolicies(session.customerId), getOrganizationContact(),
     getPensionForSummary(sessionId),
   ]);
 
@@ -52,7 +46,17 @@ export async function getCompletionData(
     customerName: session.customerName,
     participants: session.participants,
     advisorName: session.advisorName,
-    organizationName: orgName,
+    organizationName: organization.name,
+    // Die Firmenzeile wird mit eingefroren: zieht die Firma um, zeigt ein
+    // Nachdruck weiterhin die Adresse, unter der beraten wurde.
+    organization: {
+      street: organization.street,
+      postalCode: organization.postalCode,
+      city: organization.city,
+      phone: organization.phone,
+      email: organization.email,
+      website: organization.website,
+    },
     location: null,
     // settleUntouched: dieselbe Regel, die der Abschluss in der Datenbank
     // anwendet (Migration 0022). Ohne sie zeigte die Vorschau "offen", wo

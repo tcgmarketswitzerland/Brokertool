@@ -5,6 +5,12 @@ import {
 } from '@/domain/advice/protocol';
 import type { SummaryDocument } from '@/domain/advice/summary';
 
+/** Was die Firma dem Dokument mitgibt. Beides darf fehlen. */
+export type ProtocolBranding = {
+  readonly logoDataUrl: string | null;
+  readonly brandColor: string | null;
+};
+
 /**
  * Das Beratungsprotokoll als PDF (docs/08-textbausteine.md, Abschnitt 2).
  *
@@ -34,6 +40,15 @@ const s = StyleSheet.create({
   overviewLine: { marginBottom: 2 },
   title: { fontSize: 19, marginBottom: 2 },
   date: { fontSize: 10, color: MUTED, marginBottom: 22 },
+
+  head: { flexDirection: 'row', justifyContent: 'space-between',
+          alignItems: 'flex-start', marginBottom: 22 },
+  headLeft: { flex: 1 },
+  // Feste Hoehe, damit ein hohes Logo den Titel nicht nach unten drueckt.
+  logo: { width: 120, height: 40, objectFit: 'contain', objectPositionX: 1 },
+
+  issuer: { marginTop: 4, fontSize: 8.5, color: MUTED, lineHeight: 1.45,
+            textAlign: 'right' },
 
   metaRow: { flexDirection: 'row', marginBottom: 4 },
   metaLabel: { width: 78, color: MUTED },
@@ -93,13 +108,33 @@ function Bullet({ title, dueDate }: { title: string; dueDate: string | null }) {
 }
 
 export function ProtocolDocument({
-  document, contentHash, signature,
+  document, contentHash, signature, branding,
 }: {
   document: SummaryDocument;
   contentHash: string;
   /** Unterschrift des Kunden, falls erfasst. Ohne sie bleibt die Linie leer. */
   signature?: { signerName: string; dataUrl: string } | undefined;
+  /**
+   * Logo und Hausfarbe der Firma. Anders als die Firmenangaben werden sie
+   * nicht eingefroren: das Erscheinungsbild ist Darstellung, nicht Inhalt.
+   * Ein Nachdruck traegt das heutige Logo - die Aussage bleibt dieselbe.
+   */
+  branding?: ProtocolBranding | undefined;
 }) {
+  const accent = branding?.brandColor ?? INK;
+
+  // Die Absenderzeile aus dem eingefrorenen Dokument. Aeltere Snapshots
+  // kennen den Block nicht; dann steht dort nur der Firmenname.
+  const issuer = [
+    document.organizationName,
+    document.organization?.street ?? null,
+    [document.organization?.postalCode, document.organization?.city]
+      .filter(Boolean).join(' ') || null,
+    document.organization?.phone ?? null,
+    document.organization?.email ?? null,
+    document.organization?.website?.replace(/^https?:\/\//i, '') ?? null,
+  ].filter((line): line is string => Boolean(line));
+
   const overview = [
     `${document.counts.discussed} von ${document.counts.total} Sparten besprochen`,
     document.counts.actionNeeded > 0 ? `${document.counts.actionNeeded} mit Handlungsbedarf` : null,
@@ -123,8 +158,26 @@ export function ProtocolDocument({
           <Text render={({ pageNumber, totalPages }) => `Seite ${pageNumber} von ${totalPages}`} />
         </View>
 
-        <Text style={s.title}>Beratungsprotokoll</Text>
-        <Text style={s.date}>{formatSwissDate(document.date)}</Text>
+        <View style={s.head}>
+          <View style={s.headLeft}>
+            <Text style={{ ...s.title, color: accent }}>Beratungsprotokoll</Text>
+            <Text style={{ fontSize: 10, color: MUTED }}>{formatSwissDate(document.date)}</Text>
+          </View>
+
+          <View>
+            {branding?.logoDataUrl ? (
+              // Image stammt aus @react-pdf/renderer; ein alt-Attribut
+              // gaebe es im PDF nicht.
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={branding.logoDataUrl} style={s.logo} />
+            ) : null}
+            {issuer.length > 0 ? (
+              <View style={s.issuer}>
+                {issuer.map((line) => <Text key={line}>{line}</Text>)}
+              </View>
+            ) : null}
+          </View>
+        </View>
 
         <Meta label="Kunde" value={document.customerName} />
         {document.participants.length > 0 ? (

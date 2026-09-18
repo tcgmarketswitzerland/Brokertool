@@ -75,6 +75,26 @@ export type SummaryPension = {
   readonly largestGapLabel: string | null;
 };
 
+/**
+ * Die Firmenangaben, wie sie zum Zeitpunkt des Gespraechs lauteten.
+ *
+ * Eingefroren und nicht nachgeschlagen: zieht die Firma um, muss ein
+ * Nachdruck weiterhin die Adresse zeigen, unter der beraten wurde. Alle
+ * Felder ausser dem Namen sind optional - eine Firma, die gerade erst
+ * angelegt wurde, soll trotzdem abschliessen koennen.
+ *
+ * Aeltere Snapshots kennen das Feld nicht; es bleibt deshalb nullbar,
+ * damit sie lesbar bleiben.
+ */
+export type SummaryOrganization = {
+  readonly street: string | null;
+  readonly postalCode: string | null;
+  readonly city: string | null;
+  readonly phone: string | null;
+  readonly email: string | null;
+  readonly website: string | null;
+};
+
 export type SummaryInput = {
   readonly sessionId: string;
   readonly date: string;
@@ -82,6 +102,7 @@ export type SummaryInput = {
   readonly participants: readonly string[];
   readonly advisorName: string;
   readonly organizationName: string;
+  readonly organization: SummaryOrganization | null;
   readonly location: string | null;
   readonly topics: readonly SummaryInputTopic[];
   readonly policies: readonly SummaryInputPolicy[];
@@ -114,6 +135,7 @@ export type SummaryDocument = {
   readonly participants: readonly string[];
   readonly advisorName: string;
   readonly organizationName: string;
+  readonly organization?: SummaryOrganization | null;
   readonly location: string | null;
   readonly counts: {
     readonly total: number;
@@ -198,6 +220,7 @@ export function buildSummary(input: SummaryInput): SummaryDocument {
     participants: input.participants,
     advisorName: input.advisorName,
     organizationName: input.organizationName,
+    organization: input.organization,
     location: input.location,
     counts,
     topics,

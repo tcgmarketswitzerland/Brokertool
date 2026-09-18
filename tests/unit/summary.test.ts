@@ -9,6 +9,11 @@ const base: SummaryInput = {
   participants: ['Max Muster', 'Anna Muster'],
   advisorName: 'Peter Muster',
   organizationName: 'Muster Broker AG',
+  organization: {
+    street: 'Bahnhofstrasse 1', postalCode: '8001', city: 'Zürich',
+    phone: '044 123 45 67', email: 'beratung@muster.ch',
+    website: 'https://muster.ch',
+  },
   location: 'beim Kunden',
   topics: [
     { topicId: 't1', slug: 'hausrat', name: 'Hausratversicherung', icon: 'sofa',
