@@ -147,19 +147,42 @@ create index if not exists advice_sessions_advisor_idx
  * eine neue Mandantentabelle anlegt, muss sich entscheiden, ob sie an
  * einen Kunden haengt oder hierher gehoert. Ein Vergessen faellt in der
  * Migration auf, nicht im Betrieb.
+ *
+ * Als Tabelle und nicht als Funktion mit fester Liste: eine spaetere
+ * Migration traegt einen Namen nach, indem sie eine Zeile einfuegt. Stuende
+ * die Liste im Funktionskoerper, muesste jede spaetere Migration sie
+ * vollstaendig wiederholen - und ein erneutes Einspielen dieser hier
+ * wuerde die Nachtraege stillschweigend loeschen. Genau das ist beim
+ * Zusammenfuehren der Migrationen zu einem Buendel passiert.
  */
+create table if not exists rls_org_wide_registry (
+  table_name text primary key
+);
+
+alter table rls_org_wide_registry enable row level security;
+alter table rls_org_wide_registry force  row level security;
+
+drop policy if exists rls_org_wide_registry_read on rls_org_wide_registry;
+create policy rls_org_wide_registry_read on rls_org_wide_registry
+  for select to authenticated using (true);
+
+insert into rls_org_wide_registry (table_name) values
+  ('organization_members'),
+  ('invitations'),
+  ('advice_templates'),
+  ('advice_template_versions'),
+  ('advice_template_topics'),
+  ('organization_topic_settings'),
+  ('audit_logs')
+on conflict (table_name) do nothing;
+
+-- security definer, weil die Funktion aus Policies heraus aufgerufen wird
+-- und die Registratur selbst RLS traegt.
 create or replace function public.rls_org_wide_tables() returns text[]
-  language sql immutable
+  language sql stable security definer set search_path = ''
 as $$
-  select array[
-    'organization_members',
-    'invitations',
-    'advice_templates',
-    'advice_template_versions',
-    'advice_template_topics',
-    'organization_topic_settings',
-    'audit_logs'
-  ]::text[];
+  select coalesce(array_agg(r.table_name), '{}')::text[]
+    from public.rls_org_wide_registry r;
 $$;
 
 /** Die Sichtbarkeitsbedingung einer Tabelle, als SQL-Text. */

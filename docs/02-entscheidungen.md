@@ -320,6 +320,46 @@ stehen in der Einladung und wandern beim Einlösen in die Mitgliedschaft. Was im
 hängt damit nicht davon ab, was jemand bei der Anmeldung in ein Namensfeld tippt.
 
 
+## ADR-014 — Zahlungsmittel ohne Zahlungsdaten
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Brokertool speichert **keine Kartennummer, kein Ablaufdatum mit Prüfziffer und
+keinen Sicherheitscode**. Die Tabelle `payment_methods` hält die Wahl des Mittels (Kreditkarte,
+PayPal, Apple Pay), die Kennungen des Zahlungsanbieters und einen Anzeigetext — mehr nicht. Ein
+Check-Constraint weist zwölf zusammenhängende Ziffern im Anzeigefeld zurück.
+
+**Begründung:** Wer Kartendaten selbst entgegennimmt, fällt unter PCI-DSS. Das ist eine Pflicht,
+die eine Beratungssoftware nicht tragen sollte und auch nicht muss: der Zahlungsanbieter nimmt die
+Daten entgegen und gibt uns eine Kennung zurück.
+
+Solange kein Anbieter verbunden ist, bleibt der Status auf `PENDING`, und die Ansicht sagt das
+auch. Ein Formular, das nach einer Kartennummer fragt und sie irgendwo ablegt, wäre die
+schlechtere Alternative — auch als Zwischenlösung.
+
+**Konsequenz:**
+- Die Abrechnung führt der Inhaber, nicht der Administrator. Umgesetzt mit einer **restriktiven**
+  Policy: sie wird mit UND verknüpft und kann den Satz des Generators daher verschärfen, statt ihn
+  zu ersetzen.
+- Offen bleibt die Wahl des Anbieters (Stripe, Datatrans, Wallee). Das Datenmodell ist darauf
+  vorbereitet: `provider`, `provider_customer_id`, `provider_method_id`.
+
+## ADR-015 — Firmenweite Tabellen als Registratur, nicht als Liste im Code
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Welche Mandantentabellen absichtlich der ganzen Firma gehören, steht in der
+Tabelle `rls_org_wide_registry`. `rls_org_wide_tables()` liest sie aus.
+
+**Begründung:** Zuerst stand die Liste im Rumpf der Funktion. Beim Prüfen des Migrationsbündels
+fiel auf, dass der zweite Durchlauf scheiterte: 0027 trug `payment_methods` nach, dann lief 0026
+erneut und überschrieb die Funktion mit ihrer alten Liste — die Prüfung schlug an, zu Recht. Eine
+Liste im Code zwingt jede spätere Migration, sie vollständig zu wiederholen, und macht die
+Reihenfolge des erneuten Einspielens plötzlich wichtig.
+
+**Konsequenz:** Eine spätere Migration trägt einen Namen mit einer Zeile nach
+(`insert ... on conflict do nothing`). Mehrfaches Einspielen in beliebiger Reihenfolge ändert das
+Ergebnis nicht mehr.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |

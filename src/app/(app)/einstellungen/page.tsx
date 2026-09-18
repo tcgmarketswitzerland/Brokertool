@@ -1,6 +1,8 @@
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
-import { Building2, ChevronRight, Layers, Palette, ShieldCheck, Users } from 'lucide-react';
+import {
+  Building2, ChevronRight, CreditCard, Layers, Palette, ShieldCheck, Users,
+} from 'lucide-react';
 import { Card } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Einstellungen' };
@@ -26,6 +28,8 @@ const SECTIONS: ReadonlyArray<{
     description: 'Name, Adresse und Zwei-Faktor-Pflicht.' },
   { href: '/einstellungen/branding', title: 'Branding', Icon: Palette,
     description: 'Logo und Farbe für das Beratungsprotokoll.' },
+  { href: '/einstellungen/konto', title: 'Konto', Icon: CreditCard,
+    description: 'Zugänge, monatlicher Betrag und Zahlungsmittel.' },
   { href: null, title: 'Versicherungssparten', Icon: Layers,
     description: 'Welche Sparten Ihre Beratung abdeckt und in welcher Reihenfolge. Phase 8.' },
 ] as const;
