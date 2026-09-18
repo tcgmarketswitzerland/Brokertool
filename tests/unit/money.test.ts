@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { add, clampToZero, formatCHF, fromFranken, rappen, subtract } from '@/domain/shared/money';
+import {
+  add, clampToZero, formatAmount, formatCHF, fromFranken, rappen, subtract,
+} from '@/domain/shared/money';
 
 describe('Geldbetraege', () => {
   it('weist nicht ganzzahlige Rappen zurueck', () => {
@@ -28,5 +30,38 @@ describe('Geldbetraege', () => {
 
   it('formatiert in Schweizer Schreibweise', () => {
     expect(formatCHF(fromFranken(48_000))).toContain('48');
+  });
+});
+
+describe('Schweizer Schreibweise', () => {
+  it('trennt Tausender mit Apostroph', () => {
+    expect(formatAmount(1920)).toBe("1'920");
+    expect(formatAmount(1_234_567)).toBe("1'234'567");
+  });
+
+  it('zeigt Rappen nur, wenn welche da sind', () => {
+    expect(formatAmount(480)).toBe('480');
+    expect(formatAmount(480.5)).toBe('480.50');
+    expect(formatAmount(120.35)).toBe('120.35');
+  });
+
+  it('formatiert Betraege unter tausend ohne Trenner', () => {
+    expect(formatAmount(999)).toBe('999');
+  });
+
+  it('behaelt das Vorzeichen', () => {
+    expect(formatAmount(-1920)).toBe("-1'920");
+  });
+
+  it('liefert denselben Text wie formatCHF', () => {
+    expect(formatCHF(rappen(192_000))).toBe("CHF 1'920");
+  });
+
+  it('haengt nicht von der Umgebung ab', () => {
+    // Der Grund fuer die eigene Funktion: Intl liefert je nach
+    // Zeichensatzdaten einen anderen Apostroph, und schon das kostet beim
+    // Abgleich im Browser den gesamten servergerenderten Baum.
+    expect(formatAmount(1000)).toBe("1'000");
+    expect(formatAmount(1000).charCodeAt(1)).toBe(39);
   });
 });

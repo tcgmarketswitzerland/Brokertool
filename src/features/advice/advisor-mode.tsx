@@ -20,15 +20,20 @@ import { TopicList } from './components/topic-list';
  * Gespraech unsicher.
  */
 export function AdvisorMode({
-  sessionId, customerName, participants, initialState, topicNames, pension,
+  sessionId, customerName, participants, initialState, topicNames, extras,
 }: {
   sessionId: string;
   customerName: string;
   participants: readonly string[];
   initialState: SessionState;
   topicNames: Readonly<Record<string, string>>;
-  /** Die Vorsorgeanalyse, eingehaengt an der Sparte Vorsorge. */
-  pension?: { topicId: string; node: React.ReactNode } | undefined;
+  /**
+   * Zusaetze je Sparte: die Vorsorgeanalyse bei Vorsorge, der
+   * Praemienvergleich bei der Krankenkasse. Der Beratungsmodus kennt
+   * weder das eine noch das andere - er reicht nur durch, was die Seite
+   * ihm gibt.
+   */
+  extras?: Readonly<Record<string, React.ReactNode>> | undefined;
 }) {
   const { state, topics, progress, sync, dispatch } = useAdviceSession(sessionId, initialState);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -126,7 +131,7 @@ export function AdvisorMode({
             name={topicNames[active.topicId] ?? active.topicId}
             notes={notes}
             onCommand={dispatch}
-            extra={pension && pension.topicId === active.topicId ? pension.node : undefined}
+            extra={extras?.[active.topicId]}
           />
         ) : (
           <div className="grid gap-6">

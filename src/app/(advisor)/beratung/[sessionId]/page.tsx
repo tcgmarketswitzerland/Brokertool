@@ -5,6 +5,8 @@ import { AdvisorMode } from '@/features/advice/advisor-mode';
 import { getSession } from '@/features/advice/queries';
 import { getPensionAnalysis } from '@/features/pension/queries';
 import { PensionAnalysis } from '@/features/pension/pension-analysis';
+import { PremiumComparison } from '@/features/health/premium-comparison';
+import { getCustomerHousehold } from '@/features/health/household';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Beratung' };
@@ -46,33 +48,43 @@ export default async function AdvisorPage({
 
   const topicNames = Object.fromEntries(session.topics.map((t) => [t.topicId, t.name]));
 
-  // Die Vorsorge bekommt statt der reinen Spartenansicht die Analyse. Sie
-  // wird hier serverseitig geladen und als fertiger Baustein hineingereicht
-  // - der Beratungsmodus selbst kennt keine Datenbank.
-  const pensionTopic = session.topics.find((t) => t.slug === 'vorsorge');
-  const stored = pensionTopic ? await getPensionAnalysis(sessionId) : null;
+  // Zwei Sparten bekommen mehr als die reine Spartenansicht. Geladen wird
+  // das hier auf dem Server und als fertiger Baustein hineingereicht - der
+  // Beratungsmodus selbst kennt keine Datenbank.
+  const extras: Record<string, React.ReactNode> = {};
 
-  const pension = pensionTopic
-    ? {
-        topicId: pensionTopic.topicId,
-        node: (
-          <PensionAnalysis
-            session={{ sessionId, customerId: session.customerId }}
-            initial={stored ? {
-              income: stored.household.annualIncomeCents === null
-                ? '' : String(stored.household.annualIncomeCents / 100),
-              target: stored.household.targetPercent === null
-                ? '' : String(stored.household.targetPercent),
-              hasPartner: stored.household.hasPartner,
-              partnerIncome: stored.household.partnerIncomeCents === null
-                ? '' : String(stored.household.partnerIncomeCents / 100),
-              children: String(stored.household.childCount),
-              values: stored.values,
-            } : undefined}
-          />
-        ),
-      }
-    : undefined;
+  const pensionTopic = session.topics.find((t) => t.slug === 'vorsorge');
+  if (pensionTopic) {
+    const stored = await getPensionAnalysis(sessionId);
+    extras[pensionTopic.topicId] = (
+      <PensionAnalysis
+        session={{ sessionId, customerId: session.customerId }}
+        initial={stored ? {
+          income: stored.household.annualIncomeCents === null
+            ? '' : String(stored.household.annualIncomeCents / 100),
+          target: stored.household.targetPercent === null
+            ? '' : String(stored.household.targetPercent),
+          hasPartner: stored.household.hasPartner,
+          partnerIncome: stored.household.partnerIncomeCents === null
+            ? '' : String(stored.household.partnerIncomeCents / 100),
+          children: String(stored.household.childCount),
+          values: stored.values,
+        } : undefined}
+      />
+    );
+  }
+
+  const healthTopic = session.topics.find((t) => t.slug === 'krankenkasse');
+  if (healthTopic) {
+    const household = await getCustomerHousehold(session.customerId);
+    extras[healthTopic.topicId] = (
+      <PremiumComparison
+        postalCode={household.postalCode ?? undefined}
+        persons={household.persons}
+        currentPremiumCents={household.currentHealthPremiumCents}
+      />
+    );
+  }
 
   return (
     <AdvisorMode
@@ -81,7 +93,7 @@ export default async function AdvisorPage({
       participants={session.participants}
       initialState={initialState}
       topicNames={topicNames}
-      pension={pension}
+      extras={extras}
     />
   );
 }

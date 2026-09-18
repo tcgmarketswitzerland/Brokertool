@@ -30,8 +30,28 @@ export function clampToZero(value: Rappen): Rappen {
   return rappen(Math.max(0, value));
 }
 
-export function formatCHF(value: Rappen, locale = 'de-CH'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency', currency: 'CHF', minimumFractionDigits: 0, maximumFractionDigits: 2,
-  }).format(value / 100);
+/**
+ * Betrag in Schweizer Schreibweise: Tausendertrennung mit Apostroph,
+ * Rappen nur, wenn welche da sind.
+ *
+ * Von Hand und nicht ueber Intl: dieselbe Zahl muss auf dem Server und im
+ * Browser Zeichen fuer Zeichen gleich herauskommen. Die Zeichensatzdaten
+ * von Node und Chromium unterscheiden sich in der Wahl des Apostrophs, und
+ * schon das kostet beim ersten Abgleich den gesamten servergerenderten
+ * Baum - React verwirft ihn und zeichnet neu.
+ */
+export function formatAmount(franken: number): string {
+  const negative = franken < 0;
+  const value = Math.abs(franken);
+  const whole = Math.trunc(value);
+  const cents = Math.round((value - whole) * 100);
+
+  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  const tail = cents === 0 ? '' : `.${String(cents).padStart(2, '0')}`;
+
+  return `${negative ? '-' : ''}${grouped}${tail}`;
+}
+
+export function formatCHF(value: Rappen): string {
+  return `CHF ${formatAmount(value / 100)}`;
 }
