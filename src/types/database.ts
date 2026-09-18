@@ -36,7 +36,16 @@ export type Database = {
     Views: Record<string, View>;
     Functions: {
       create_organization: {
-        Args: { p_name: string; p_display_name?: string | null };
+        Args: {
+          p_name: string;
+          p_display_name?: string | null;
+          p_email?: string | null;
+          p_phone?: string | null;
+          p_street?: string | null;
+          p_postal_code?: string | null;
+          p_city?: string | null;
+          p_finma_number?: string | null;
+        };
         Returns: string;
       };
       accept_invitation: {
@@ -61,6 +70,10 @@ export type Database = {
       };
       complete_advice_session: {
         Args: { p_session_id: string; p_document: Json };
+        Returns: string;
+      };
+      publish_topic_selection: {
+        Args: { p_topics: Json };
         Returns: string;
       };
     };

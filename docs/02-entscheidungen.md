@@ -360,6 +360,31 @@ Reihenfolge des erneuten Einspielens plötzlich wichtig.
 Ergebnis nicht mehr.
 
 
+## ADR-016 — Eine Änderung der Spartenauswahl erzeugt eine neue Vorlagenversion
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Die Firma wählt unter Einstellungen → Versicherungssparten, welche Sparten ihre
+Beratung abdeckt, in welcher Reihenfolge und welche davon ein Ergebnis brauchen. Gespeichert wird
+das als **neue** Vorlagenversion; laufende Beratungen behalten ihre.
+
+**Begründung:** Eine Beratung zeigt auf genau eine Vorlagenversion. Würde die Auswahl die
+bestehende Version ändern, verschöbe sich die Bewertung eines laufenden Gesprächs rückwirkend —
+eine Sparte, die gestern noch freiwillig war, wäre plötzlich Pflicht, und ein Protokoll, das
+gestern vollständig war, wäre es heute nicht mehr. Das ist genau die stille Änderung an einer
+Dokumentation, die Konzeptpunkt 29 ausschliesst.
+
+**Konsequenz:**
+- Ist die Auswahl unverändert, entsteht keine Version. Ohne diese Prüfung häufte jedes Speichern
+  eine weitere, identische Version an.
+- Mindestens eine Sparte muss aktiv bleiben — sonst liesse sich keine Beratung mehr starten.
+- Eine abgewählte Sparte kann keine Pflicht sein; die Oberfläche setzt beides gemeinsam.
+- `organization_topic_settings` hält auch die abgewählten Sparten fest. Die Vorlagenversion
+  enthält nur die aktiven und könnte deshalb nicht sagen, ob eine Sparte abgewählt oder nie
+  angesehen wurde.
+- Die Reihenfolge des übergebenen Arrays **ist** die Anzeigereihenfolge. Ein zusätzliches
+  Sortierfeld im Formular wäre eine zweite Wahrheit.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |

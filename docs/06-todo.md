@@ -44,11 +44,11 @@ von selbst, und die Produktion auf Knopfdruck mit Freigabe.
 ### A1 · Die neuen Migrationen einspielen  ⚠️ blockiert alles Neue
 
 Produktiv laufen die Migrationen 0001 bis 0017. Alles aus Phase 5 bis 7 — Aufgaben, Abschluss,
-Snapshot, Unterschrift, Vorsorgeanalyse, Dokumente, Firmenangaben, Berateransicht, Abrechnung — braucht 0018 bis 0027. **Ohne diesen Schritt
+Snapshot, Unterschrift, Vorsorgeanalyse, Dokumente, Firmenangaben, Berateransicht, Abrechnung, Spartenauswahl — braucht 0018 bis 0028. **Ohne diesen Schritt
 siehst du die neuen Seiten, aber jede Aktion darauf scheitert.**
 
 - [ ] Supabase → **SQL Editor** → neue Abfrage
-- [ ] Inhalt von `supabase/bundles/0018-0027.sql` einfügen und ausführen
+- [ ] Inhalt von `supabase/bundles/0018-0028.sql` einfügen und ausführen
 
 Die Datei lässt sich **gefahrlos mehrfach ausführen** — jeder Schritt prüft, ob er schon getan
 ist. Der abgebrochene Versuch vom ersten Mal ist damit kein Problem.
@@ -67,6 +67,7 @@ Was dabei passiert:
 | 0025 | Adresse, Kontakt, Logo und Hausfarbe der Firma — sie stehen auf jedem Protokoll |
 | 0026 | Berateransicht: jeder sieht seine eigenen Kunden, die Firmenleitung sieht alle; FINMA-Nummern |
 | 0027 | Zahlungsmittel der Firma — ohne Kartendaten, die nimmt der Zahlungsanbieter entgegen |
+| 0028 | Spartenauswahl je Firma; jede Änderung erzeugt eine neue Vorlagenversion |
 
 Geprüft gegen eine Datenbank im Stand 0017, dreimal hintereinander eingespielt — ohne Fehler und
 ohne doppelte Vorlagenversionen.

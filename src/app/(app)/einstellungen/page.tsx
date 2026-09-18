@@ -30,8 +30,8 @@ const SECTIONS: ReadonlyArray<{
     description: 'Logo und Farbe für das Beratungsprotokoll.' },
   { href: '/einstellungen/konto', title: 'Konto', Icon: CreditCard,
     description: 'Zugänge, monatlicher Betrag und Zahlungsmittel.' },
-  { href: null, title: 'Versicherungssparten', Icon: Layers,
-    description: 'Welche Sparten Ihre Beratung abdeckt und in welcher Reihenfolge. Phase 8.' },
+  { href: '/einstellungen/sparten', title: 'Versicherungssparten', Icon: Layers,
+    description: 'Welche Sparten Ihre Beratung abdeckt und in welcher Reihenfolge.' },
 ] as const;
 
 export default function SettingsPage() {
