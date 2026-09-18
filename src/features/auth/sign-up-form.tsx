@@ -37,13 +37,12 @@ export function SignUpForm() {
       ) : null}
 
       {field('fullName', 'Ihr Name', { autoComplete: 'name', autoFocus: true, placeholder: 'Peter Muster' })}
-      {field('organizationName', 'Firma', { autoComplete: 'organization', placeholder: 'Muster Broker AG' })}
       {field('email', 'E-Mail', { type: 'email', autoComplete: 'username', placeholder: 'name@brokerfirma.ch' })}
       {field('password', 'Passwort', { type: 'password', autoComplete: 'new-password' },
         'Mindestens 12 Zeichen. Eine Passphrase aus mehreren Wörtern ist sicherer als Sonderzeichen.')}
 
       <Button type="submit" loading={pending} className="mt-1 w-full" size="lg">
-        Firma einrichten
+        Konto anlegen
       </Button>
     </form>
   );

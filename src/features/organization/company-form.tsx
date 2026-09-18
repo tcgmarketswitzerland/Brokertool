@@ -72,6 +72,14 @@ export function CompanyForm({ organization }: { organization: OrganizationProfil
         )}
       </Field>
 
+      <Field label="FINMA-Nr. der Firma" hint="Registernummer im Vermittlerregister"
+             error={err('finmaNumber')}>
+        {(props) => (
+          <Input {...props} name="finmaNumber" defaultValue={organization.finmaNumber ?? ''}
+                 className="tabular" maxLength={60} placeholder="F01234567" />
+        )}
+      </Field>
+
       <label className="flex items-start gap-3 rounded-lg border border-line bg-surface-sunken px-4 py-3">
         <input
           type="checkbox" name="requireMfa" defaultChecked={organization.requireMfa}

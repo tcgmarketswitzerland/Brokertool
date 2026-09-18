@@ -56,6 +56,7 @@ export async function getCompletionData(
       phone: organization.phone,
       email: organization.email,
       website: organization.website,
+      finmaNumber: organization.finmaNumber,
     },
     location: null,
     // settleUntouched: dieselbe Regel, die der Abschluss in der Datenbank

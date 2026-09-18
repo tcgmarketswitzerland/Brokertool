@@ -41,6 +41,7 @@ export const companySchema = z.object({
     }
     return withScheme;
   }),
+  finmaNumber: optional(60),
   requireMfa: z.union([z.literal('on'), z.literal('')]).optional()
     .transform((v) => v === 'on'),
 });

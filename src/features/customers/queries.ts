@@ -10,6 +10,8 @@ export type CustomerListItem = {
   customerType: CustomerType;
   updatedAt: string;
   personCount: number;
+  /** Zustaendiger Berater. Fuer die Firmenleitung die wichtigste Spalte. */
+  advisorName: string | null;
 };
 
 export type Person = {
@@ -50,7 +52,9 @@ export async function listCustomers(search?: string): Promise<CustomerListItem[]
 
   let query = supabase
     .from('customers')
-    .select('id, display_name, customer_type, updated_at, customer_persons(count)')
+    .select(`id, display_name, customer_type, updated_at,
+             customer_persons(count),
+             organization_members!customers_primary_advisor_id_fkey ( display_name )`)
     .is('deleted_at', null)
     .order('display_name')
     .limit(200);
@@ -73,6 +77,10 @@ export async function listCustomers(search?: string): Promise<CustomerListItem[]
       customerType: row.customer_type as CustomerType,
       updatedAt: str(row.updated_at),
       personCount,
+      // Nur die Firmenleitung sieht hier mehr als einen Namen: einem
+      // Berater zeigt RLS ohnehin nur die eigenen Kunden.
+      advisorName: nullable(
+        (row.organization_members as { display_name?: unknown } | null)?.display_name),
     };
   });
 }

@@ -4,6 +4,7 @@ import { ChevronRight, FileText } from 'lucide-react';
 import { Badge, Card, CardContent } from '@/components/ui';
 import { listSessions, type SessionListItem } from '@/features/advice/queries';
 import { formatDate } from '@/domain/shared/date';
+import { currentMember } from '@/features/members/queries';
 
 export const metadata: Metadata = { title: 'Beratungen' };
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,10 @@ function matches(session: SessionListItem, filter: FilterKey): boolean {
   return filter === 'offen' ? open : session.status === 'COMPLETED';
 }
 
-function Row({ session }: { session: SessionListItem }) {
+function Row({ session, showAdvisor }: {
+  session: SessionListItem;
+  showAdvisor: boolean;
+}) {
   const open = session.status === 'IN_PROGRESS' || session.status === 'DRAFT';
   return (
     <li>
@@ -36,11 +40,12 @@ function Row({ session }: { session: SessionListItem }) {
       >
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{session.customerName}</p>
-          <p className="tabular text-[0.8125rem] text-ink-muted">
+          <p className="tabular truncate text-[0.8125rem] text-ink-muted">
             {session.settled} von {session.total} Sparten
             {session.startedAt
               ? ` · ${formatDate(session.startedAt)}`
               : ''}
+            {showAdvisor && session.advisorName ? ` · ${session.advisorName}` : ''}
           </p>
         </div>
         <Badge tone={session.status === 'COMPLETED' ? 'success' : 'accent'}>
@@ -64,7 +69,11 @@ export default async function SessionsPage({
   const filter: FilterKey =
     FILTERS.some((f) => f.key === zeigen) ? (zeigen as FilterKey) : 'offen';
 
-  const sessions = await listSessions();
+  const [sessions, me] = await Promise.all([listSessions(), currentMember()]);
+
+  // Wie in der Kundenliste: fuer einen Berater stuende hier in jeder Zeile
+  // sein eigener Name.
+  const showAdvisor = me?.role === 'OWNER' || me?.role === 'ADMIN' || me?.role === 'BACKOFFICE';
   const shown = sessions.filter((s) => matches(s, filter));
 
   const counts = {
@@ -125,7 +134,7 @@ export default async function SessionsPage({
       ) : (
         <Card>
           <ul className="divide-y divide-line">
-            {shown.map((s) => <Row key={s.id} session={s} />)}
+            {shown.map((s) => <Row key={s.id} session={s} showAdvisor={showAdvisor} />)}
           </ul>
         </Card>
       )}

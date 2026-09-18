@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
-import { connect, resetSchema } from './helpers/db';
+import { claimsFor, connect, resetSchema } from './helpers/db';
 
 /**
  * Unterschriften.
@@ -24,10 +24,7 @@ async function asRole<T>(
   orgId: string, role: string, userId: string, fn: () => Promise<T>,
 ): Promise<T> {
   await client.query("select set_config('request.jwt.claims', $1, false)",
-    [JSON.stringify({
-      sub: userId, role: 'authenticated',
-      app_metadata: { organization_id: orgId, organization_role: role },
-    })]);
+    [await claimsFor(client, orgId, role, userId)]);
   await client.query('set role authenticated');
   try {
     return await fn();

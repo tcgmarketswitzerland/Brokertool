@@ -6,6 +6,7 @@ import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { CUSTOMER_TYPE_LABEL } from '@/domain/customer/types';
 import { CustomerSearch } from '@/features/customers/customer-search';
 import { listCustomers } from '@/features/customers/queries';
+import { currentMember } from '@/features/members/queries';
 
 export const metadata: Metadata = { title: 'Kunden' };
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,11 @@ export default async function CustomersPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const customers = await listCustomers(q);
+  const [customers, me] = await Promise.all([listCustomers(q), currentMember()]);
+
+  // Einem Berater zeigt RLS ohnehin nur die eigenen Kunden; der Name waere
+  // dort in jeder Zeile derselbe und damit reines Rauschen.
+  const showAdvisor = me?.role === 'OWNER' || me?.role === 'ADMIN' || me?.role === 'BACKOFFICE';
 
   return (
     <div className="grid gap-5">
@@ -66,9 +71,10 @@ export default async function CustomersPage({
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{c.displayName}</p>
-                    <p className="text-[0.8125rem] text-ink-muted">
+                    <p className="truncate text-[0.8125rem] text-ink-muted">
                       {CUSTOMER_TYPE_LABEL[c.customerType]}
                       {c.personCount > 1 ? ` · ${c.personCount} Personen` : ''}
+                      {showAdvisor && c.advisorName ? ` · ${c.advisorName}` : ''}
                     </p>
                   </div>
                   {c.customerType !== 'PRIVATE' ? (

@@ -10,6 +10,7 @@ export type OrganizationProfile = {
   phone: string | null;
   email: string | null;
   website: string | null;
+  finmaNumber: string | null;
   brandColor: string | null;
   /** Vollstaendiger data:-Verweis oder null. Nur fuer Anzeige und PDF. */
   logoDataUrl: string | null;
@@ -27,7 +28,7 @@ export async function getOrganization(): Promise<OrganizationProfile | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('organizations')
-    .select(`id, name, street, postal_code, city, phone, email, website,
+    .select(`id, name, street, postal_code, city, phone, email, website, finma_number,
              brand_color, logo_base64, logo_content_type, require_mfa`)
     .limit(1)
     .maybeSingle();
@@ -45,6 +46,7 @@ export async function getOrganization(): Promise<OrganizationProfile | null> {
     phone: text(data.phone),
     email: text(data.email),
     website: text(data.website),
+    finmaNumber: text(data.finma_number),
     brandColor: text(data.brand_color),
     logoDataUrl: data.logo_base64 == null || data.logo_content_type == null
       ? null
@@ -62,13 +64,14 @@ export type OrganizationContact = {
   readonly phone: string | null;
   readonly email: string | null;
   readonly website: string | null;
+  readonly finmaNumber: string | null;
 };
 
 export async function getOrganizationContact(): Promise<OrganizationContact> {
   const organization = await getOrganization();
   if (!organization) {
     return { name: '', street: null, postalCode: null, city: null,
-             phone: null, email: null, website: null };
+             phone: null, email: null, website: null, finmaNumber: null };
   }
   return {
     name: organization.name,
@@ -78,5 +81,6 @@ export async function getOrganizationContact(): Promise<OrganizationContact> {
     phone: organization.phone,
     email: organization.email,
     website: organization.website,
+    finmaNumber: organization.finmaNumber,
   };
 }

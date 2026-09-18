@@ -31,6 +31,32 @@ export async function resetSchema(client: Client): Promise<void> {
   );
 }
 
+/**
+ * Die JWT-Claims, wie der Access-Token-Hook sie setzt - member_id
+ * eingeschlossen.
+ *
+ * Seit Migration 0026 haengt die Sichtbarkeit eines Kunden daran. Fehlt
+ * der Claim, sieht ein Berater nichts - und der Test scheitert an einer
+ * Policy statt an der Sache, die er pruefen wollte.
+ */
+export async function claimsFor(
+  client: Client, orgId: string, role: string, userId: string,
+): Promise<string> {
+  const { rows } = await client.query<{ id: string }>(
+    'select id from organization_members where organization_id = $1 and user_id = $2',
+    [orgId, userId]);
+  const memberId = rows[0]?.id;
+  return JSON.stringify({
+    sub: userId,
+    role: 'authenticated',
+    app_metadata: {
+      organization_id: orgId,
+      organization_role: role,
+      ...(memberId ? { member_id: memberId } : {}),
+    },
+  });
+}
+
 export type Actor = { userId: string; organizationId: string; role: string };
 
 /**
@@ -43,11 +69,7 @@ export async function asUser<T>(
   actor: Actor,
   fn: () => Promise<T>,
 ): Promise<T> {
-  const claims = JSON.stringify({
-    sub: actor.userId,
-    role: 'authenticated',
-    app_metadata: { organization_id: actor.organizationId, organization_role: actor.role },
-  });
+  const claims = await claimsFor(client, actor.organizationId, actor.role, actor.userId);
   await client.query('begin');
   await client.query("select set_config('request.jwt.claims', $1, true)", [claims]);
   await client.query('set local role authenticated');

@@ -14,8 +14,9 @@ export function InvitationRow({ invitation }: { invitation: Invitation }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{invitation.email}</p>
-        <p className="text-[0.8125rem] text-ink-muted">
+        <p className="truncate font-medium">{invitation.name ?? invitation.email}</p>
+        <p className="truncate text-[0.8125rem] text-ink-muted">
+          {invitation.name ? `${invitation.email} · ` : ''}
           {ROLE_LABEL[invitation.role]} · läuft in {invitation.daysLeft}{' '}
           {invitation.daysLeft === 1 ? 'Tag' : 'Tagen'} ab
         </p>

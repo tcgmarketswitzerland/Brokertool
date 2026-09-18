@@ -8,6 +8,8 @@ export type Member = {
   displayName: string;
   email: string;
   role: OrgRole;
+  jobTitle: string | null;
+  finmaNumber: string | null;
   isActive: boolean;
 };
 
@@ -15,6 +17,7 @@ export type Invitation = {
   id: string;
   email: string;
   role: OrgRole;
+  name: string | null;
   /**
    * Serverseitig berechnet. Waehrend des Renderns auf die Uhr zu schauen
    * waere unrein und ergaebe auf Server und Client verschiedene Werte -
@@ -32,7 +35,7 @@ export async function listMembers(): Promise<Member[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('organization_members')
-    .select('id, user_id, display_name, email, role, is_active')
+    .select('id, user_id, display_name, email, role, job_title, finma_number, is_active')
     .order('role')
     .order('display_name');
 
@@ -44,6 +47,8 @@ export async function listMembers(): Promise<Member[]> {
     displayName: String(r.display_name),
     email: String(r.email),
     role: r.role as OrgRole,
+    jobTitle: r.job_title == null ? null : String(r.job_title),
+    finmaNumber: r.finma_number == null ? null : String(r.finma_number),
     isActive: Boolean(r.is_active),
   }));
 }
@@ -52,7 +57,7 @@ export async function listPendingInvitations(): Promise<Invitation[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('invitations')
-    .select('id, email, role, expires_at')
+    .select('id, email, role, first_name, last_name, expires_at')
     .eq('status', 'PENDING')
     .order('created_at', { ascending: false });
 
@@ -63,6 +68,7 @@ export async function listPendingInvitations(): Promise<Invitation[]> {
     id: String(r.id),
     email: String(r.email),
     role: r.role as OrgRole,
+    name: [r.first_name, r.last_name].filter(Boolean).join(' ') || null,
     daysLeft: Math.max(0, Math.ceil((new Date(String(r.expires_at)).getTime() - now) / 86_400_000)),
   }));
 }
@@ -74,7 +80,7 @@ export async function currentMember(): Promise<Member | null> {
 
   const { data } = await supabase
     .from('organization_members')
-    .select('id, user_id, display_name, email, role, is_active')
+    .select('id, user_id, display_name, email, role, job_title, finma_number, is_active')
     .eq('user_id', auth.user.id)
     .maybeSingle();
 
@@ -85,6 +91,8 @@ export async function currentMember(): Promise<Member | null> {
     displayName: String(data.display_name),
     email: String(data.email),
     role: data.role as OrgRole,
+    jobTitle: data.job_title == null ? null : String(data.job_title),
+    finmaNumber: data.finma_number == null ? null : String(data.finma_number),
     isActive: Boolean(data.is_active),
   };
 }

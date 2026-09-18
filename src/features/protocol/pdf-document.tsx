@@ -133,6 +133,8 @@ export function ProtocolDocument({
     document.organization?.phone ?? null,
     document.organization?.email ?? null,
     document.organization?.website?.replace(/^https?:\/\//i, '') ?? null,
+    document.organization?.finmaNumber
+      ? `FINMA-Nr. ${document.organization.finmaNumber}` : null,
   ].filter((line): line is string => Boolean(line));
 
   const overview = [

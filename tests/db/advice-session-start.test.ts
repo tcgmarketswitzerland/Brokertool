@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
-import { connect, resetSchema } from './helpers/db';
+import { claimsFor, connect, resetSchema } from './helpers/db';
 
 /**
  * Beratung starten: Themen werden aus der Vorlagenversion instanziiert.
@@ -16,7 +16,7 @@ let customerId = '';
 
 async function asRole<T>(role: string, userId: string, fn: () => Promise<T>): Promise<T> {
   await client.query("select set_config('request.jwt.claims', $1, false)",
-    [JSON.stringify({ sub: userId, app_metadata: { organization_id: orgId, organization_role: role } })]);
+    [await claimsFor(client, orgId, role, userId)]);
   return fn();
 }
 

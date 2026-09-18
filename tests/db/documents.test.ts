@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
-import { connect, resetSchema } from './helpers/db';
+import { claimsFor, connect, resetSchema } from './helpers/db';
 
 /**
  * Dokumente.
@@ -25,10 +25,7 @@ async function asRole<T>(
   orgId: string, role: string, userId: string, fn: () => Promise<T>,
 ): Promise<T> {
   await client.query("select set_config('request.jwt.claims', $1, false)",
-    [JSON.stringify({
-      sub: userId, role: 'authenticated',
-      app_metadata: { organization_id: orgId, organization_role: role },
-    })]);
+    [await claimsFor(client, orgId, role, userId)]);
   await client.query('set role authenticated');
   try {
     return await fn();
@@ -51,9 +48,16 @@ beforeAll(async () => {
     if (user === A) orgA = rows[0].id; else orgB = rows[0].id;
   }
 
+  // Zustaendiger Berater, wie ihn die Anwendung setzt: seit 0026 sieht ein
+  // Berater nur Kunden, die ihm zugeordnet sind.
+  const memberA = (await client.query(
+    `select id from organization_members where organization_id = $1 and user_id = $2`,
+    [orgA, A])).rows[0].id;
+
   customerA = (await client.query(
-    `insert into customers (organization_id, customer_type) values ($1,'PRIVATE') returning id`,
-    [orgA])).rows[0].id;
+    `insert into customers (organization_id, customer_type, primary_advisor_id)
+     values ($1,'PRIVATE',$2) returning id`,
+    [orgA, memberA])).rows[0].id;
   await client.query(
     `insert into customer_persons (organization_id, customer_id, person_role, first_name, last_name)
      values ($1,$2,'PRIMARY','Max','Muster')`, [orgA, customerA]);

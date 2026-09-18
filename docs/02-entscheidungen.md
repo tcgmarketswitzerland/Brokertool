@@ -269,6 +269,57 @@ passiert: `1'234.50` auf dem Server, `1 234.50` im Browser.
 `TT.MM.JJJJ` beim Datum. Eine zweite Sprache braucht später eine Tabelle, kein `Intl`.
 
 
+## ADR-012 — Sichtbarkeit je Berater, erzeugt statt geschrieben
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Ein Berater sieht seine eigenen Kunden und Beratungen. Die Firmenleitung (Inhaber,
+Administrator) und das Backoffice sehen alles, samt zuständigem Berater. Die Regel steht nicht in
+20 handgeschriebenen Policies, sondern im Generator `apply_tenant_rls()`: er hängt an jede
+Mandantentabelle automatisch die passende Bedingung an — je nachdem, ob sie eine Spalte
+`customer_id`, `session_id` oder `policy_id` trägt.
+
+**Begründung:** Bis hierher galt „wer zur Firma gehört, sieht alles, was der Firma gehört". Für ein
+Einzelbüro ist das richtig, für ein Maklerbüro mit mehreren Beratern falsch.
+
+Die naheliegende Umsetzung wäre gewesen, `customers` und `advice_sessions` einzuschränken. Das
+hätte ein Loch gelassen: Notizen, Verträge, Dokumente, Aufgaben und die Vorsorgeanalyse hängen am
+Kunden, tragen seine Daten und wären weiterhin für jeden in der Firma lesbar gewesen. Es sind
+heute 14 solche Tabellen, und die nächste kommt bestimmt.
+
+Deshalb kennt der Generator die Regel. `assert_rls_complete()` prüft ab 0026 zusätzlich, dass jede
+Mandantentabelle entweder an einem Kunden hängt oder ausdrücklich in `rls_org_wide_tables()` steht.
+Wer eine neue Tabelle anlegt und beides vergisst, bekommt einen Fehler in der Migration — nicht ein
+Datenleck im Betrieb.
+
+**Konsequenz:**
+- `customers.primary_advisor_id` bekommt den Vorgabewert `auth_member_id()`, gelesen aus dem
+  JWT-Claim, den der Access-Token-Hook seit 0010 setzt. Wer einen Kunden anlegt, ist für ihn
+  zuständig.
+- Bestehende Kunden werden dem Mitglied zugeordnet, das sie angelegt hat.
+- Backoffice sieht bewusst alles: seine Aufgabe ist das Nachpflegen fremder Fälle.
+- Eine Beratung sieht auch, wem der Kunde gehört — sonst bräche die Geschichte des eigenen Kunden
+  ab, sobald ein Kollege einmal eingesprungen ist.
+- Die Datenbanktests setzen `member_id` jetzt in die JWT-Claims. Ohne diesen Claim sieht ein
+  Berater nichts.
+
+## ADR-013 — Die Firma wird an einer Stelle eröffnet
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Eine Brokerfirma entsteht ausschliesslich unter `/einrichten`, mit Name,
+Kontakt-E-Mail, Telefon, Adresse und FINMA-Registernummer. Die Registrierung legt nur noch das
+Konto an.
+
+**Begründung:** Vorher konnte die Firma an zwei Stellen entstehen — bei der Registrierung, wenn
+die E-Mail-Bestätigung ausgeschaltet ist, und unter `/einrichten` sonst. Zwei Stellen heissen zwei
+Gelegenheiten, sie unvollständig anzulegen. Die Angaben stehen auf jedem Beratungsprotokoll, und
+nachgetragen wird erfahrungsgemäss nie.
+
+**Konsequenz:** Das Feld „Firma" verschwindet aus dem Registrierungsformular. Der Berater wird vom
+Adminaccount erfasst — mit Vor- und Nachname, Jobtitel und eigener FINMA-Nummer; diese Angaben
+stehen in der Einladung und wandern beim Einlösen in die Mitgliedschaft. Was im Protokoll steht,
+hängt damit nicht davon ab, was jemand bei der Anmeldung in ein Namensfeld tippt.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |

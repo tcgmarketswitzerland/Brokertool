@@ -55,7 +55,6 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
 export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const parsed = signUpSchema.safeParse({
     fullName: formData.get('fullName'),
-    organizationName: formData.get('organizationName'),
     email: formData.get('email'),
     password: formData.get('password'),
   });
@@ -86,30 +85,17 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     };
   }
 
-  // Ohne Sitzung wartet die Bestaetigungsmail. Die Firma entsteht dann
-  // unter /einrichten, wohin die Weiche im Anwendungsbereich fuehrt -
-  // hier ist noch kein Token da, mit dem sich etwas anlegen liesse.
+  // Ohne Sitzung wartet die Bestaetigungsmail.
   if (!data.session) {
     redirect(`/registrieren/bestaetigen?email=${encodeURIComponent(parsed.data.email)}`);
   }
 
-  const { error: orgError } = await supabase.rpc('create_organization', {
-    p_name: parsed.data.organizationName,
-    p_display_name: parsed.data.fullName,
-  });
-
-  if (orgError) {
-    logger.error('organization_create_failed', { reason: safeId(orgError.code ?? 'unknown') });
-    return { status: 'error', message: 'Konto angelegt, aber die Firma konnte nicht erstellt werden.' };
-  }
-
-  // Das Token wurde vor der Mitgliedschaft ausgestellt und traegt die
-  // Mandantenkennung noch nicht. Ohne Erneuerung saehe der frisch
-  // registrierte Nutzer eine leere Anwendung.
-  await supabase.auth.refreshSession();
-
+  // Die Firma entsteht immer unter /einrichten, nie hier. Dort werden
+  // Adresse, Kontakt und FINMA-Nummer verlangt - Angaben, die auf jedem
+  // Protokoll stehen. Eine zweite Stelle, die eine Firma anlegen kann,
+  // waere eine zweite Stelle, an der sie unvollstaendig entsteht.
   revalidatePath('/', 'layout');
-  redirect('/dashboard');
+  redirect('/einrichten');
 }
 
 export async function signOut(): Promise<never> {

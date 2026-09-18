@@ -8,6 +8,20 @@ import { ORG_ROLES, ROLE_DESCRIPTION, ROLE_LABEL, type ActionState } from './sch
 
 const INITIAL: ActionState = { status: 'idle' };
 
+function Feld({ label, hint, htmlFor, children }: {
+  label: string; hint?: string; htmlFor: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor={htmlFor} className="text-[0.8125rem] font-medium">
+        {label}
+        {hint ? <span className="font-normal text-ink-subtle"> — {hint}</span> : null}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 export function InviteForm() {
   const [state, action, pending] = useActionState(inviteMember, INITIAL);
   const [copied, setCopied] = useState(false);
@@ -25,24 +39,48 @@ export function InviteForm() {
 
   return (
     <div className="grid gap-4">
-      <form action={action} className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-        <div className="grid gap-1.5">
-          <label htmlFor="invite-email" className="text-[0.8125rem] font-medium">E-Mail</label>
-          <Input id="invite-email" name="email" type="email" required placeholder="name@brokerfirma.ch" />
+      <form action={action} className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Feld label="Vorname" htmlFor="invite-first">
+            <Input id="invite-first" name="firstName" required maxLength={100}
+                   autoComplete="off" placeholder="Anna" />
+          </Feld>
+          <Feld label="Nachname" htmlFor="invite-last">
+            <Input id="invite-last" name="lastName" required maxLength={100}
+                   autoComplete="off" placeholder="Beispiel" />
+          </Feld>
         </div>
 
-        <div className="grid gap-1.5 sm:w-44">
-          <label htmlFor="invite-role" className="text-[0.8125rem] font-medium">Rolle</label>
-          <Select id="invite-role" name="role" value={role} onChange={(e) => setRole(e.target.value)}>
-            {ORG_ROLES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABEL[r]}</option>
-            ))}
-          </Select>
+        <Feld label="E-Mail" htmlFor="invite-email">
+          <Input id="invite-email" name="email" type="email" required
+                 placeholder="anna@brokerfirma.ch" />
+        </Feld>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Feld label="Jobtitel" hint="optional" htmlFor="invite-title">
+            <Input id="invite-title" name="jobTitle" maxLength={100}
+                   placeholder="Kundenberaterin" />
+          </Feld>
+          <Feld label="FINMA-Nr." hint="optional" htmlFor="invite-finma">
+            <Input id="invite-finma" name="finmaNumber" maxLength={60}
+                   className="tabular" placeholder="F01234567" />
+          </Feld>
         </div>
 
-        <Button type="submit" loading={pending}>
-          <UserPlus aria-hidden />Einladen
-        </Button>
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+          <Feld label="Rolle" htmlFor="invite-role">
+            <Select id="invite-role" name="role" value={role}
+                    onChange={(e) => setRole(e.target.value)}>
+              {ORG_ROLES.map((r) => (
+                <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+              ))}
+            </Select>
+          </Feld>
+
+          <Button type="submit" loading={pending}>
+            <UserPlus aria-hidden />Einladen
+          </Button>
+        </div>
       </form>
 
       <p className="text-[0.8125rem] leading-relaxed text-ink-subtle">

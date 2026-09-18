@@ -8,9 +8,23 @@ import { logger, safeId } from '@/lib/logger';
 import type { AuthState } from './schemas';
 import { sessionState } from './bootstrap';
 
+/**
+ * Was eine Brokerfirma bei der Eroeffnung angeben muss.
+ *
+ * Adresse, Kontakt und FINMA-Registernummer stehen spaeter auf jedem
+ * Beratungsprotokoll. Sie hier zu verlangen statt sie spaeter
+ * nachzutragen ist Absicht: ein Protokoll ohne Absender ist im
+ * Streitfall wenig wert, und nachgetragen wird erfahrungsgemaess nie.
+ */
 const schema = z.object({
   organizationName: z.string().trim().min(2, 'Bitte den Firmennamen angeben.').max(200),
   fullName: z.string().trim().min(2, 'Bitte Ihren Namen angeben.').max(200),
+  email: z.string().trim().pipe(z.email('Keine gültige E-Mail-Adresse.')),
+  phone: z.string().trim().min(6, 'Bitte die Telefonnummer angeben.').max(40),
+  street: z.string().trim().min(2, 'Bitte die Strasse angeben.').max(150),
+  postalCode: z.string().trim().regex(/^[1-9][0-9]{3}$/, 'Vierstellige Schweizer Postleitzahl.'),
+  city: z.string().trim().min(2, 'Bitte den Ort angeben.').max(100),
+  finmaNumber: z.string().trim().min(2, 'Bitte die FINMA-Nummer angeben.').max(60),
 });
 
 /**
@@ -27,6 +41,12 @@ export async function createOrganization(
   const parsed = schema.safeParse({
     organizationName: formData.get('organizationName'),
     fullName: formData.get('fullName'),
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+    street: formData.get('street'),
+    postalCode: formData.get('postalCode'),
+    city: formData.get('city'),
+    finmaNumber: formData.get('finmaNumber'),
   });
   if (!parsed.success) {
     return {
@@ -51,6 +71,12 @@ export async function createOrganization(
   const { error } = await supabase.rpc('create_organization', {
     p_name: parsed.data.organizationName,
     p_display_name: parsed.data.fullName,
+    p_email: parsed.data.email,
+    p_phone: parsed.data.phone,
+    p_street: parsed.data.street,
+    p_postal_code: parsed.data.postalCode,
+    p_city: parsed.data.city,
+    p_finma_number: parsed.data.finmaNumber,
   });
 
   if (error) {

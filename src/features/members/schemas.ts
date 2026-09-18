@@ -18,9 +18,23 @@ export const ROLE_DESCRIPTION: Record<OrgRole, string> = {
   BACKOFFICE: 'Kunden, Verträge und Aufgaben pflegen. Führt keine Beratung.',
 };
 
+const optional = (max: number) =>
+  z.string().trim().max(max).optional().transform((v) => (v === '' || v === undefined ? null : v));
+
+/**
+ * Der Adminaccount erfasst den Berater, nicht der Berater sich selbst.
+ *
+ * Name, Jobtitel und FINMA-Nummer stehen spaeter im Beratungsprotokoll.
+ * Sie gehoeren deshalb in die Einladung und nicht in ein Namensfeld, das
+ * der Eingeladene bei der Anmeldung frei ausfuellt.
+ */
 export const inviteSchema = z.object({
   email: emailSchema,
   role: z.enum(ORG_ROLES),
+  firstName: z.string().trim().min(2, 'Bitte den Vornamen angeben.').max(100),
+  lastName: z.string().trim().min(2, 'Bitte den Nachnamen angeben.').max(100),
+  jobTitle: optional(100),
+  finmaNumber: optional(60),
 });
 
 export const changeRoleSchema = z.object({

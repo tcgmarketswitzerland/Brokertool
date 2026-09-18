@@ -23,7 +23,6 @@ export const signInSchema = z.object({
 
 export const signUpSchema = z.object({
   fullName: z.string().min(1, 'Name fehlt').max(120).transform((v) => v.trim()),
-  organizationName: z.string().min(1, 'Name der Firma fehlt').max(200).transform((v) => v.trim()),
   email: emailSchema,
   password: passwordSchema,
 });

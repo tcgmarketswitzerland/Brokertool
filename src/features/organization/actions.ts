@@ -61,6 +61,7 @@ export async function saveCompanyProfile(
     phone: formData.get('phone'),
     email: formData.get('email'),
     website: formData.get('website'),
+    finmaNumber: formData.get('finmaNumber'),
     requireMfa: formData.get('requireMfa') ?? '',
   });
 
@@ -80,6 +81,7 @@ export async function saveCompanyProfile(
     phone: v.phone,
     email: v.email,
     website: v.website,
+    finma_number: v.finmaNumber,
     require_mfa: v.requireMfa,
   });
 }

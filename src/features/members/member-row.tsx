@@ -25,7 +25,14 @@ export function MemberRow({ member, isSelf, canManage }: {
           {isSelf ? <Badge>Sie</Badge> : null}
           {!member.isActive ? <Badge tone="warning">Deaktiviert</Badge> : null}
         </p>
-        <p className="truncate text-[0.8125rem] text-ink-muted">{member.email}</p>
+        <p className="truncate text-[0.8125rem] text-ink-muted">
+          {[member.jobTitle, member.email].filter(Boolean).join(' · ')}
+        </p>
+        {member.finmaNumber ? (
+          <p className="tabular truncate text-[0.75rem] text-ink-subtle">
+            FINMA-Nr. {member.finmaNumber}
+          </p>
+        ) : null}
       </div>
 
       {canManage && !isSelf ? (

@@ -93,6 +93,7 @@ export type SummaryOrganization = {
   readonly phone: string | null;
   readonly email: string | null;
   readonly website: string | null;
+  readonly finmaNumber: string | null;
 };
 
 export type SummaryInput = {

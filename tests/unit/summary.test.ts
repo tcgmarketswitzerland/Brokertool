@@ -12,7 +12,7 @@ const base: SummaryInput = {
   organization: {
     street: 'Bahnhofstrasse 1', postalCode: '8001', city: 'Zürich',
     phone: '044 123 45 67', email: 'beratung@muster.ch',
-    website: 'https://muster.ch',
+    website: 'https://muster.ch', finmaNumber: 'F01234567',
   },
   location: 'beim Kunden',
   topics: [

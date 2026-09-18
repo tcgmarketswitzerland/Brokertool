@@ -23,6 +23,10 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
   const parsed = inviteSchema.safeParse({
     email: formData.get('email'),
     role: formData.get('role'),
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    jobTitle: formData.get('jobTitle'),
+    finmaNumber: formData.get('finmaNumber'),
   });
   if (!parsed.success) {
     return { status: 'error', message: parsed.error.issues[0]?.message ?? 'Eingabe prüfen.' };
@@ -40,6 +44,10 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
   const { error } = await supabase.from('invitations').insert({
     email: parsed.data.email,
     role: parsed.data.role,
+    first_name: parsed.data.firstName,
+    last_name: parsed.data.lastName,
+    job_title: parsed.data.jobTitle,
+    finma_number: parsed.data.finmaNumber,
     token_hash: hash,
     expires_at: expiresAt,
     invited_by: auth.user.id,

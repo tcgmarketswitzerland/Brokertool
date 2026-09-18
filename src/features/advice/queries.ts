@@ -138,6 +138,8 @@ export type SessionListItem = {
   customerName: string;
   status: AdviceSession['status'];
   startedAt: string | null;
+  /** Wer die Beratung gefuehrt hat. Fuer die Firmenleitung sichtbar. */
+  advisorName: string | null;
   settled: number;
   total: number;
 };
@@ -150,6 +152,7 @@ export async function listSessions(): Promise<SessionListItem[]> {
     .select(`
       id, status, started_at,
       customers ( display_name ),
+      organization_members ( display_name ),
       advice_session_topics ( progress_status, outcome )
     `)
     .is('deleted_at', null)
@@ -170,6 +173,8 @@ export async function listSessions(): Promise<SessionListItem[]> {
       customerName: String(customer.display_name ?? 'Kunde'),
       status: r.status as AdviceSession['status'],
       startedAt: r.started_at == null ? null : String(r.started_at),
+      advisorName: row(r.organization_members).display_name == null
+        ? null : String(row(r.organization_members).display_name),
       settled,
       total: topics.length,
     };
