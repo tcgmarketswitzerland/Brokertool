@@ -11,6 +11,7 @@ import {
 import { setTaskStatus } from '../actions';
 import type { TaskActionState } from '../schemas';
 import type { Task } from '../queries';
+import { formatDate } from '@/domain/shared/date';
 
 const INITIAL: TaskActionState = { status: 'idle' };
 
@@ -93,7 +94,7 @@ export function TaskRow({ task, today, showCustomer = true }: {
           {task.dueDate ? (
             <span className={`tabular ${overdue ? 'font-medium text-danger' : ''}`}>
               {overdue ? 'überfällig seit ' : 'bis '}
-              {new Date(task.dueDate).toLocaleDateString('de-CH')}
+              {formatDate(task.dueDate)}
             </span>
           ) : null}
         </p>

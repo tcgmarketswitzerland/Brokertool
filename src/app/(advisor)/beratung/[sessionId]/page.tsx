@@ -7,6 +7,9 @@ import { getPensionAnalysis } from '@/features/pension/queries';
 import { PensionAnalysis } from '@/features/pension/pension-analysis';
 import { PremiumComparison } from '@/features/health/premium-comparison';
 import { getCustomerHousehold } from '@/features/health/household';
+import { listInsurers, listPolicies } from '@/features/policies/queries';
+import { getCustomer } from '@/features/customers/queries';
+import { listCustomerDocuments } from '@/features/documents/queries';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Beratung' };
@@ -86,6 +89,16 @@ export default async function AdvisorPage({
     );
   }
 
+  // Das Dossier fuer den Abschnitt "Aktueller Versicherungsschutz": was
+  // beim Kunden bereits erfasst ist, und was es braucht, um im Gespraech
+  // eine weitere Police aufzunehmen.
+  const [policies, documents, insurers, customer] = await Promise.all([
+    listPolicies(session.customerId),
+    listCustomerDocuments(session.customerId),
+    listInsurers(),
+    getCustomer(session.customerId),
+  ]);
+
   return (
     <AdvisorMode
       sessionId={session.id}
@@ -94,6 +107,16 @@ export default async function AdvisorPage({
       initialState={initialState}
       topicNames={topicNames}
       extras={extras}
+      dossier={{
+        customerId: session.customerId,
+        sessionId,
+        policies,
+        documents,
+        insurers,
+        persons: (customer?.persons ?? []).map((p) => ({
+          id: p.id, name: `${p.firstName} ${p.lastName}`,
+        })),
+      }}
     />
   );
 }

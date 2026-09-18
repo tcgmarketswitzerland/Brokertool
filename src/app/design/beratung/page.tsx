@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { SessionState } from '@/domain/advice/session-state';
 import { AdvisorMode } from '@/features/advice/advisor-mode';
+import type { Dossier } from '@/features/advice/components/coverage-section';
 
 export const metadata: Metadata = { title: 'Beratungsmodus — Vorschau' };
 
@@ -32,6 +33,44 @@ const TOPICS: ReadonlyArray<Row> = [
   ['b2', 'Hypothek',                  'key-round',   false, 'NOT_STARTED', null,               'UNKNOWN'],
 ];
 
+/**
+ * Erfundenes Dossier, damit der Abschnitt "Aktueller Versicherungsschutz"
+ * mit Inhalt zu sehen ist. Erfassen und Hochladen fuehren hier ins Leere -
+ * die Vorschau laeuft ohne Anmeldung.
+ */
+const DOSSIER: Dossier = {
+  customerId: '00000000-0000-4000-8000-000000000001',
+  sessionId: '00000000-0000-4000-8000-000000000000',
+  insurers: [{ id: '00000000-0000-4000-8000-000000000002', name: 'Die Mobiliar' }],
+  persons: [],
+  policies: [{
+    id: '00000000-0000-4000-8000-000000000003',
+    topicId: 'a1',
+    topicName: 'Hausratversicherung',
+    topicIcon: 'sofa',
+    personId: null,
+    insurerName: 'Die Mobiliar',
+    productName: 'Hausrat Komfort',
+    policyNumber: '4.812.345',
+    status: 'ACTIVE',
+    startDate: '2021-01-01',
+    endDate: null,
+    premiumCents: 48_000,
+    premiumFrequency: 'YEARLY',
+    sumInsuredCents: 10_000_000,
+    deductibleCents: 20_000,
+    noticePeriodMonths: 3,
+  }],
+  documents: [{
+    id: '00000000-0000-4000-8000-000000000004',
+    topicId: 'a1',
+    filename: 'Police_Hausrat_2021.pdf',
+    mimeType: 'application/pdf',
+    sizeBytes: 284_193,
+    createdAt: '2026-02-11T09:12:00.000Z',
+  }],
+};
+
 export default function AdvisorPreviewPage() {
   const state: SessionState = {
     topics: Object.fromEntries(TOPICS.map(([id, , icon, isRequired, progressStatus, outcome, coverageState], i) => [
@@ -49,6 +88,7 @@ export default function AdvisorPreviewPage() {
         participants={['Max Muster', 'Anna Muster']}
         initialState={state}
         topicNames={Object.fromEntries(TOPICS.map(([id, name]) => [id, name]))}
+        dossier={DOSSIER}
       />
     </div>
   );

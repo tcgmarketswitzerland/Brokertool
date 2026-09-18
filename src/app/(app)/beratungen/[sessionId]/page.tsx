@@ -16,6 +16,7 @@ import { getSignature, getSnapshot } from '@/features/protocol/queries';
 import { EmailDraft } from '@/features/protocol/email-draft';
 import { listSessionTasks } from '@/features/tasks/queries';
 import { TaskRow } from '@/features/tasks/components/task-row';
+import { formatDateLong } from '@/domain/shared/date';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Beratung' };
@@ -67,8 +68,7 @@ export default async function SessionSummaryPage({
             <h1 className="text-2xl">{session.customerName}</h1>
             <p className="tabular text-sm text-ink-muted">
               {session.startedAt
-                ? new Date(session.startedAt).toLocaleDateString('de-CH', {
-                    day: '2-digit', month: 'long', year: 'numeric' })
+                ? formatDateLong(session.startedAt)
                 : 'Nicht gestartet'}
               {session.advisorName ? ` · ${session.advisorName}` : ''}
             </p>

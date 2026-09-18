@@ -7,6 +7,7 @@ import {
   confirmMfaEnrollment, removeMfaFactor, startMfaEnrollment, type MfaState,
 } from './mfa-actions';
 import type { MfaFactor } from './queries';
+import { formatDate } from '@/domain/shared/date';
 
 const INITIAL: MfaState = { status: 'idle' };
 
@@ -84,7 +85,7 @@ export function MfaSetup({ factors }: { factors: MfaFactor[] }) {
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{f.friendlyName}</p>
               <p className="text-[0.8125rem] text-ink-subtle">
-                Eingerichtet am {new Date(f.createdAt).toLocaleDateString('de-CH')}
+                Eingerichtet am {formatDate(f.createdAt)}
               </p>
             </div>
             <form action={removeAction}>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ChevronRight, FileText } from 'lucide-react';
 import { Badge, Card, CardContent } from '@/components/ui';
 import { listSessions, type SessionListItem } from '@/features/advice/queries';
+import { formatDate } from '@/domain/shared/date';
 
 export const metadata: Metadata = { title: 'Beratungen' };
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,7 @@ function Row({ session }: { session: SessionListItem }) {
           <p className="tabular text-[0.8125rem] text-ink-muted">
             {session.settled} von {session.total} Sparten
             {session.startedAt
-              ? ` · ${new Date(session.startedAt).toLocaleDateString('de-CH')}`
+              ? ` · ${formatDate(session.startedAt)}`
               : ''}
           </p>
         </div>

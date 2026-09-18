@@ -44,11 +44,11 @@ von selbst, und die Produktion auf Knopfdruck mit Freigabe.
 ### A1 · Die neuen Migrationen einspielen  ⚠️ blockiert alles Neue
 
 Produktiv laufen die Migrationen 0001 bis 0017. Alles aus Phase 5 bis 7 — Aufgaben, Abschluss,
-Snapshot, Unterschrift — braucht 0018 bis 0021. **Ohne diesen Schritt siehst du die neuen Seiten,
-aber jede Aktion darauf scheitert.**
+Snapshot, Unterschrift, Vorsorgeanalyse, Dokumente — braucht 0018 bis 0024. **Ohne diesen Schritt
+siehst du die neuen Seiten, aber jede Aktion darauf scheitert.**
 
 - [ ] Supabase → **SQL Editor** → neue Abfrage
-- [ ] Inhalt von `supabase/bundles/0018-0021.sql` einfügen und ausführen
+- [ ] Inhalt von `supabase/bundles/0018-0024.sql` einfügen und ausführen
 
 Die Datei lässt sich **gefahrlos mehrfach ausführen** — jeder Schritt prüft, ob er schon getan
 ist. Der abgebrochene Versuch vom ersten Mal ist damit kein Problem.
@@ -61,6 +61,9 @@ Was dabei passiert:
 | 0019 | Tabelle `tasks` für Aufgaben von Kunde und Berater |
 | 0020 | Snapshot, Unterschrift, Schreibschutz für abgeschlossene Beratungen |
 | 0021 | Weiche nach der Anmeldung: erkennt fehlende Firma und veraltetes Token |
+| 0022 | Abschluss schon ab einer besprochenen Sparte; der Rest wird als „nicht thematisiert" festgehalten |
+| 0023 | Tabelle `pension_analyses` für die Vorsorgeanalyse |
+| 0024 | Dokumente hängen an einer Sparte und sind nach dem Abschluss schreibgeschützt |
 
 Geprüft gegen eine Datenbank im Stand 0017, dreimal hintereinander eingespielt — ohne Fehler und
 ohne doppelte Vorlagenversionen.

@@ -10,6 +10,7 @@ import type { SessionState } from '@/domain/advice/session-state';
 import { useAdviceSession } from './use-advice-session';
 import { SyncIndicator } from './components/sync-indicator';
 import { TopicDetail } from './components/topic-detail';
+import type { Dossier } from './components/coverage-section';
 import { TopicList } from './components/topic-list';
 
 /**
@@ -20,7 +21,7 @@ import { TopicList } from './components/topic-list';
  * Gespraech unsicher.
  */
 export function AdvisorMode({
-  sessionId, customerName, participants, initialState, topicNames, extras,
+  sessionId, customerName, participants, initialState, topicNames, extras, dossier,
 }: {
   sessionId: string;
   customerName: string;
@@ -34,6 +35,8 @@ export function AdvisorMode({
    * ihm gibt.
    */
   extras?: Readonly<Record<string, React.ReactNode>> | undefined;
+  /** Bestehende Vertraege des Kunden, fuer den aktuellen Versicherungsschutz. */
+  dossier?: Dossier | undefined;
 }) {
   const { state, topics, progress, sync, dispatch } = useAdviceSession(sessionId, initialState);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -132,6 +135,7 @@ export function AdvisorMode({
             notes={notes}
             onCommand={dispatch}
             extra={extras?.[active.topicId]}
+            dossier={dossier}
           />
         ) : (
           <div className="grid gap-6">

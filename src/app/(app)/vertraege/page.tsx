@@ -4,6 +4,7 @@ import { Briefcase, CalendarClock } from 'lucide-react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, TopicIcon } from '@/components/ui';
 import { formatCHF, rappen } from '@/domain/shared/money';
 import { listAllPolicies, listUpcomingCancellations } from '@/features/policies/queries';
+import { formatDate } from '@/domain/shared/date';
 
 export const metadata: Metadata = { title: 'Verträge' };
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,7 @@ export default async function PoliciesPage() {
                     </p>
                   </div>
                   <Badge tone="warning" className="tabular">
-                    {new Date(u.date).toLocaleDateString('de-CH')}
+                    {formatDate(u.date)}
                   </Badge>
                 </Link>
               </li>

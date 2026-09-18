@@ -64,6 +64,25 @@ export const COVERAGE_LABEL: Record<CoverageState, string> = {
 };
 
 /**
+ * Dieselben drei Zustaende, wie sie im Gespraech angeboten werden.
+ *
+ * Getrennt von COVERAGE_LABEL, weil die beiden Texte verschiedene Leser
+ * haben: im Protokoll steht ein ganzer Satz fuer den Kunden, im Gespraech
+ * steht auf der Schaltflaeche ein Wort, das der Berater im Vorbeigehen
+ * trifft.
+ */
+export const COVERAGE_CHOICE_LABEL: Record<CoverageState, string> = {
+  UNKNOWN: 'Noch offen',
+  NO_COVER: 'Keine',
+  COVER_EXISTS: 'Bestehende Police',
+};
+
+/** Reihenfolge im Gespraech: erst die Antwort, die der Kunde meist gibt. */
+export const COVERAGE_CHOICES = [
+  'NO_COVER', 'COVER_EXISTS', 'UNKNOWN',
+] as const satisfies readonly CoverageState[];
+
+/**
  * Erlaubte Uebergaenge. SKIPPED ist von ueberall erreichbar: der Kunde kann
  * jederzeit sagen, dass ihn ein Thema nicht interessiert. Aus SKIPPED
  * zurueck geht es ebenfalls - er kann es sich anders ueberlegen.

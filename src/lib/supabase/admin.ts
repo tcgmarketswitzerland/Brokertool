@@ -17,7 +17,12 @@ export type AdminReason =
   | 'organization:create'   // Registrierung: es existiert noch keine Mitgliedschaft
   | 'invitation:accept'     // Einladung einloesen, bevor der Claim gesetzt ist
   | 'webhook:inbound'       // eingehende Webhooks haben keinen Nutzerkontext
-  | 'maintenance:job';      // Wartungsjobs ohne angemeldeten Nutzer
+  | 'maintenance:job'       // Wartungsjobs ohne angemeldeten Nutzer
+  // Ablage von Kundendokumenten. Storage-Richtlinien setzen Eigentum an
+  // storage.objects voraus, das ein Supabase-Projekt nicht hergibt - die
+  // Zugriffspruefung liegt deshalb vor dem Aufruf, in der Route, und
+  // laeuft dort ueber RLS auf documents.
+  | 'document:storage';
 
 const schema = z.object({
   url: z.string().url(),

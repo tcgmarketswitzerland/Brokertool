@@ -10,6 +10,7 @@ import {
 import { removePerson, savePerson } from './actions';
 import type { CustomerActionState } from './schemas';
 import type { Person } from './queries';
+import { formatDate } from '@/domain/shared/date';
 
 const INITIAL: CustomerActionState = { status: 'idle' };
 
@@ -59,7 +60,7 @@ export function PersonCard({
               <span className="block text-[0.8125rem] text-ink-muted">
                 {PERSON_ROLE_LABEL[person.personRole]}
                 {person.dateOfBirth
-                  ? ` · ${new Date(person.dateOfBirth).toLocaleDateString('de-CH')}`
+                  ? ` · ${formatDate(person.dateOfBirth)}`
                   : ''}
               </span>
             ) : null}

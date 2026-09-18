@@ -133,3 +133,12 @@ pnpm migrate            # einspielen
 
 Der SQL Editor und die Bündel unter `supabase/bundles/` werden damit überflüssig. Sie bleiben
 vorerst liegen, bis die Umstellung durch ist.
+
+Ein neues Bündel entsteht mit:
+
+```bash
+node scripts/bundle-migrations.mjs 0018 0024
+```
+
+Wer ein Bündel von Hand einspielt, setzt danach `node scripts/migrate.mjs baseline 0024` —
+sonst will die Action dieselben Schritte ein zweites Mal fahren.

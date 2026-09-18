@@ -3,52 +3,12 @@
 import { useId } from 'react';
 import { EyeOff, Users } from 'lucide-react';
 import { TopicIcon } from '@/components/ui';
-import { cn } from '@/lib/cn';
-import {
-  COVERAGE_LABEL, COVERAGE_STATES, OUTCOME_LABEL, SELECTABLE_OUTCOMES,
-} from '@/domain/advice/status';
+import { OUTCOME_LABEL, SELECTABLE_OUTCOMES } from '@/domain/advice/status';
 import type { Outcome } from '@/domain/advice/status';
 import type { CommandPayload } from '@/domain/advice/commands';
 import type { NoteState, TopicState } from '@/domain/advice/session-state';
-
-/**
- * Eine Versicherungssparte im Gespraech.
- *
- * Drei Entscheidungen, in der Reihenfolge, in der sie fallen:
- *   1. Besteht ueberhaupt eine Deckung?  (Befund)
- *   2. Was moechte der Kunde?            (Entscheidung)
- *   3. Was ist dazu zu notieren?
- *
- * Grosse Flaechen statt Auswahlmenues: der Berater tippt im Gespraech mit
- * einem Finger, oft ohne hinzusehen.
- */
-
-function Choice({
-  checked, onClick, children, color,
-}: {
-  checked: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  color?: string | undefined;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      onClick={onClick}
-      className={cn(
-        'rounded-lg border px-4 py-3 text-left text-[0.9375rem] font-medium transition-colors',
-        checked
-          ? 'border-transparent text-ink-inverted'
-          : 'border-line bg-surface text-ink hover:bg-surface-hover',
-      )}
-      style={checked ? { backgroundColor: color ?? 'var(--color-accent)' } : undefined}
-    >
-      {children}
-    </button>
-  );
-}
+import { Choice } from './choice';
+import { CoverageSection, type Dossier } from './coverage-section';
 
 const OUTCOME_COLOR: Partial<Record<Outcome, string>> = {
   NO_ACTION_NEEDED: 'var(--status-no-action)',
@@ -59,8 +19,20 @@ const OUTCOME_COLOR: Partial<Record<Outcome, string>> = {
   CLIENT_DECLINED: 'var(--status-declined)',
 };
 
+/**
+ * Eine Versicherungssparte im Gespraech.
+ *
+ * Vier Schritte, in der Reihenfolge, in der sie fallen:
+ *   1. Was ist heute versichert?         (Aktueller Versicherungsschutz)
+ *   2. Womit wurde gearbeitet?           (Analyse, nur wo es eine gibt)
+ *   3. Was moechte der Kunde?            (Entscheidung)
+ *   4. Was ist dazu zu notieren?
+ *
+ * Grosse Flaechen statt Auswahlmenues: der Berater tippt im Gespraech mit
+ * einem Finger, oft ohne hinzusehen.
+ */
 export function TopicDetail({
-  topic, name, notes, onCommand, extra,
+  topic, name, notes, onCommand, extra, dossier,
 }: {
   topic: TopicState;
   name: string;
@@ -68,6 +40,8 @@ export function TopicDetail({
   onCommand: (payload: CommandPayload) => void;
   /** Zusatz fuer einzelne Sparten - bei Vorsorge die Analyse. */
   extra?: React.ReactNode | undefined;
+  /** Bestehende Vertraege des Kunden, fuer den Versicherungsschutz oben. */
+  dossier?: Dossier | undefined;
 }) {
   const noteId = useId();
   const shared = notes.find((n) => n.visibility === 'SHARED' && n.topicId === topic.topicId);
@@ -105,19 +79,13 @@ export function TopicDetail({
         ) : null}
       </div>
 
-      <fieldset className="grid gap-2.5">
-        <legend className="mb-1 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-ink-subtle">
-          Bestehende Situation
-        </legend>
-        <div role="radiogroup" aria-label="Bestehende Situation" className="grid gap-2 sm:grid-cols-3">
-          {COVERAGE_STATES.map((s) => (
-            <Choice key={s} checked={topic.coverageState === s}
-                    onClick={() => onCommand({ type: 'TOPIC_SET_COVERAGE', topicId: topic.topicId, coverageState: s })}>
-              {COVERAGE_LABEL[s]}
-            </Choice>
-          ))}
-        </div>
-      </fieldset>
+      <CoverageSection
+        topicId={topic.topicId}
+        coverageState={topic.coverageState}
+        dossier={dossier}
+        onSelect={(coverageState) =>
+          onCommand({ type: 'TOPIC_SET_COVERAGE', topicId: topic.topicId, coverageState })}
+      />
 
       {extra}
 

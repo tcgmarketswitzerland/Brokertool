@@ -223,6 +223,52 @@ Sachverhalte, und nur der zweite löst die Pflichtbegründung aus.
 Dokumentation unlesbar zu machen. Geändert haben sich nur die Beschriftungen und die Auswahlliste.
 
 
+## ADR-010 — Dokumente ohne Storage-Richtlinien
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Kundendokumente liegen in einem privaten Supabase-Bucket. Der Zugriff läuft
+nicht über Storage-Richtlinien, sondern über zwei eigene Routen: `POST /api/dokumente` und
+`GET /api/dokumente/<id>`. Beide prüfen zuerst über RLS auf den Tabellen `customers` und
+`documents`, ob die Zeile überhaupt sichtbar ist, und fassen die Datei erst danach an — mit dem
+geheimen Schlüssel, in `src/lib/storage/documents.ts`.
+
+**Begründung:** Storage-Richtlinien setzen Eigentum an `storage.objects` voraus. In einem
+Supabase-Projekt gehört diese Tabelle `supabase_storage_admin`; `create policy` scheitert mit
+*must be owner of table objects*. Dieselbe Meldung hatte schon die Unterschrift betroffen. Die
+Alternative — Richtlinien von Hand im Dashboard klicken — widerspricht der Regel, dass es keine
+manuellen Produktionsänderungen an der Datenbank gibt.
+
+Die Mandantentrennung hängt damit nicht am Anwendungscode: sie hängt weiterhin an RLS, nur wird
+sie eine Ebene früher abgefragt. Findet die Datenbank das Dokument nicht, gibt es keine signierte
+URL — und die Antwort ist dieselbe wie bei einer erfundenen ID.
+
+**Konsequenz:**
+- `AdminReason` bekommt den Wert `document:storage`; jeder Aufruf wird protokolliert.
+- Signierte URLs leben 60 Sekunden und werden nie gespeichert.
+- Der gemeldete Dateityp wird nicht geglaubt: geprüft werden die ersten Bytes
+  (`src/domain/document/sniff.ts`). Angenommen werden PDF, JPEG und PNG bis 20 MB.
+- Der Dateiname im Bucket ist eine UUID; der Originalname steht nur in der Datenbank und wird
+  nie als Pfad verwendet.
+- Gelöscht wird weich. Ein Dokument, das an einer abgeschlossenen Beratung hängt, lässt sich gar
+  nicht mehr ändern — derselbe Schreibschutz wie für Notizen und Analyse.
+
+
+## ADR-011 — Datum und Betrag ohne Intl
+**Datum:** 2026-09-18 · **Status:** entschieden
+
+**Entscheidung:** Beträge und Daten werden mit eigenen Funktionen formatiert
+(`src/domain/shared/money.ts`, `src/domain/shared/date.ts`). `Intl` und `toLocaleDateString`
+kommen in gerenderten Ausgaben nicht mehr vor.
+
+**Begründung:** Die Ausgabe von `Intl` hängt von der ICU-Version ab, und die ist im Node-Prozess
+eine andere als im Browser. Server und Client formatierten dann unterschiedlich, und React
+verwarf die gesamte Seite mit einem Hydration-Mismatch. Genau das ist im Prämienvergleich
+passiert: `1'234.50` auf dem Server, `1 234.50` im Browser.
+
+**Konsequenz:** Die Formate sind fest verdrahtet und getestet — Apostroph als Tausendertrennzeichen,
+`TT.MM.JJJJ` beim Datum. Eine zweite Sprache braucht später eine Tabelle, kein `Intl`.
+
+
 ## Noch offen
 
 | # | Offene Entscheidung | Wann nötig |
