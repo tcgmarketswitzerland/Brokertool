@@ -119,8 +119,50 @@ describe('Berater sieht nur die eigenen Kunden', () => {
   it('laesst Bent keine Notiz an einer fremden Beratung anlegen', async () => {
     await expect(asRole('ADVISOR', BENT, async () =>
       client.query(
-        `insert into notes (session_id, customer_id, visibility, body)
-         values ($1,$2,'SHARED','fremd')`, [annaSession, annaCustomer])))
+        `insert into notes (session_id, visibility, body)
+         values ($1,'SHARED','fremd')`, [annaSession])))
+      .rejects.toThrow(/row-level security/);
+  });
+
+  /**
+   * Die Luecke aus 0026, geschlossen in 0030.
+   *
+   * Eine Notiz traegt genau einen Bezug. Im haeufigsten Fall - der Notiz
+   * zu einer Sparte - ist das session_topic_id; customer_id und
+   * session_id stehen dann auf NULL, und die Bedingung von 0026 war
+   * erfuellt, ohne etwas zu pruefen. Ausgerechnet bei Notizen, in denen
+   * steht, was im Gespraech gesagt wurde.
+   */
+  it('zeigt Bent die Spartennotiz einer fremden Beratung nicht', async () => {
+    const topicId = (await client.query(
+      'select id from advice_session_topics where session_id = $1 limit 1',
+      [annaSession])).rows[0].id;
+
+    await asRole('ADVISOR', ANNA, async () =>
+      client.query(
+        `insert into notes (session_topic_id, visibility, body)
+         values ($1,'SHARED','Kunde erwaehnte eine Scheidung.')`, [topicId]));
+
+    const seen = await asRole('ADVISOR', BENT, async () =>
+      (await client.query('select id from notes where session_topic_id = $1',
+        [topicId])).rowCount);
+    expect(seen).toBe(0);
+
+    const mine = await asRole('ADVISOR', ANNA, async () =>
+      (await client.query('select id from notes where session_topic_id = $1',
+        [topicId])).rowCount);
+    expect(mine).toBe(1);
+  });
+
+  it('laesst Bent keine Spartennotiz in einer fremden Beratung anlegen', async () => {
+    const topicId = (await client.query(
+      'select id from advice_session_topics where session_id = $1 limit 1',
+      [annaSession])).rows[0].id;
+
+    await expect(asRole('ADVISOR', BENT, async () =>
+      client.query(
+        `insert into notes (session_topic_id, visibility, body)
+         values ($1,'SHARED','fremd')`, [topicId])))
       .rejects.toThrow(/row-level security/);
   });
 

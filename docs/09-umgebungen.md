@@ -137,8 +137,8 @@ vorerst liegen, bis die Umstellung durch ist.
 Ein neues Bündel entsteht mit:
 
 ```bash
-node scripts/bundle-migrations.mjs 0018 0028
+node scripts/bundle-migrations.mjs 0018 0030
 ```
 
-Wer ein Bündel von Hand einspielt, setzt danach `node scripts/migrate.mjs baseline 0028` —
+Wer ein Bündel von Hand einspielt, setzt danach `node scripts/migrate.mjs baseline 0030` —
 sonst will die Action dieselben Schritte ein zweites Mal fahren.
