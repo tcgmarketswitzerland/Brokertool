@@ -76,6 +76,10 @@ export type Database = {
         Args: { p_topics: Json };
         Returns: string;
       };
+      remove_demo_data: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
     };
     Enums: {
       org_role: 'OWNER' | 'ADMIN' | 'ADVISOR' | 'BACKOFFICE';

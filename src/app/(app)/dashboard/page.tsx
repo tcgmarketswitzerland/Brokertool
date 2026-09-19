@@ -8,13 +8,16 @@ import { countCustomers } from '@/features/customers/queries';
 import { listSessions } from '@/features/advice/queries';
 import { listUpcomingCancellations } from '@/features/policies/queries';
 import { countOpenTasks } from '@/features/tasks/queries';
+import { countDemoCustomers } from '@/features/demo/queries';
+import { DemoPanel } from '@/features/demo/demo-panel';
 
 export const metadata: Metadata = { title: 'Übersicht' };
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const [customers, sessions, upcoming, openTasks] = await Promise.all([
+  const [customers, sessions, upcoming, openTasks, demoCustomers] = await Promise.all([
     countCustomers(), listSessions(), listUpcomingCancellations(), countOpenTasks(),
+    countDemoCustomers(),
   ]);
   const open = sessions.filter((s) => s.status === 'IN_PROGRESS' || s.status === 'DRAFT').length;
 
@@ -45,6 +48,8 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <DemoPanel hasDemo={demoCustomers > 0} hasCustomers={customers > 0} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map(({ label, value, Icon }) => (
